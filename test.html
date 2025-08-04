@@ -2,10 +2,30 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <title>欢迎来到我的GitHub网站！</title>
+    <title>White Client</title>
+    <script>
+      // Webpage view counter
+      window.onload = function() {
+        if (localStorage.pageviewCount) {
+          localStorage.pageviewCount = Number(localStorage.pageviewCount) + 1;
+        } else {
+          localStorage.pageviewCount = 1;
+        }
+        document.getElementById('viewCount').textContent = "Page views: " + localStorage.pageviewCount;
+      };
+    </script>
   </head>
   <body>
     <h1>Hello, GitHub Pages!</h1>
-    <p>这是我的个人网站。</p>
+    <p>功能性客户端</p>
+    
+    <!-- View counter -->
+    <div id="viewCount" style="margin: 20px 0; font-style: italic;"></div>
+    
+    <!-- Download link -->
+    <a href="https://github.com/jjjmmmdexh227/jjjmmmdexh/raw/main/Client.apk" 
+       style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">
+      下载White Client
+    </a>
   </body>
 </html>
