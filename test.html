@@ -4,22 +4,92 @@
     <meta charset="UTF-8">
     <title>White Client</title>
     <script>
-      // Webpage view counter
-      window.onload = function() {
-        if (localStorage.pageviewCount) {
-          localStorage.pageviewCount = Number(localStorage.pageviewCount) + 1;
-        } else {
-          localStorage.pageviewCount = 1;
+    //备胎
+      const IP_API_LIST = [
+        'https://api.ipify.org?format=json',
+        'https://ipapi.co/json/',
+        'https://ipinfo.io/json'
+      ];
+      
+      async function getClientIP(retries = 2, delay = 1000) {
+         for (const api of IP_API_LIST) {
+          try {
+            const response = await fetch(api);
+            if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+            
+            const data = await response.json();
+            const ip = data.ip || data.ip_address;
+            if (ip) return ip;
+          } catch (error) {
+            console.log(`API ${api} 调用失败:`, error.message);
+            if (retries > 0) {
+              await new Promise(resolve => setTimeout(resolve, delay));
+              retries--;
+            }
+          }
         }
-        document.getElementById('viewCount').textContent = "浏览人数: " + localStorage.pageviewCount;
+        throw new Error('所有IP获取接口失败');
+      }
+      
+      window.onload = async function() {
+        let clientIP = null;
+        try {
+          clientIP = await getClientIP();
+          
+          if (!localStorage.visitorIPs) {
+            localStorage.visitorIPs = JSON.stringify({});
+          }
+          
+          const visitorIPs = JSON.parse(localStorage.visitorIPs);
+          
+          if (visitorIPs[clientIP]) {
+            visitorIPs[clientIP]++;
+          } else {
+            visitorIPs[clientIP] = 1;
+          }
+          
+          localStorage.visitorIPs = JSON.stringify(visitorIPs);
+          
+          const uniqueVisitors = Object.keys(visitorIPs).length;
+          
+          document.getElementById('viewCount').textContent = `浏览人数: ${uniqueVisitors}`;
+          document.getElementById('ipInfo').textContent = `您的IP: ${clientIP} (本IP访问次数: ${visitorIPs[clientIP]})`;
+        } catch (error) {
+          console.error('获取IP失败:', error);
+          const fallbackKey = 'fallbackVisitorId';
+          
+          if (!localStorage[fallbackKey]) {
+            localStorage[fallbackKey] = 'fallback_' + Math.random().toString(36).substr(2, 9);
+          }
+          
+          if (!localStorage.fallbackViewCount) {
+            localStorage.fallbackViewCount = JSON.stringify({});
+          }
+          
+          const fallbackCounts = JSON.parse(localStorage.fallbackViewCount);
+          const visitorId = localStorage[fallbackKey];
+          
+          if (fallbackCounts[visitorId]) {
+            fallbackCounts[visitorId]++;
+          } else {
+            fallbackCounts[visitorId] = 1;
+          }
+          
+          localStorage.fallbackViewCount = JSON.stringify(fallbackCounts);
+          const uniqueVisitors = Object.keys(fallbackCounts).length;
+          
+          document.getElementById('viewCount').textContent = `浏览人数: ${uniqueVisitors}`;
+          document.getElementById('ipInfo').textContent = "IP检测服务暂时不可用，已启用设备标识模式";
+        }
       };
     </script>
   </head>
   <body>
     <h1>White Client!</h1>
     <p>功能性客户端，由jjjmmmdexh制作</p>
-    
+    <p>Made In China</p>
     <div id="viewCount" style="margin: 20px 0; font-style: italic;"></div>
+    <div id="ipInfo" style="margin: 10px 0; color: #666; font-size: 0.9em;"></div>
     
     <a href="https://github.com/jjjmmmdexh227/jjjmmmdexh/raw/main/Client.apk" 
        style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">
