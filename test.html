@@ -1,99 +1,257 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>White Client</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script>
-    //备胎
-      const IP_API_LIST = [
-        'https://api.ipify.org?format=json',
-        'https://ipapi.co/json/',
-        'https://ipinfo.io/json'
-      ];
-      
-      async function getClientIP(retries = 2, delay = 1000) {
-         for (const api of IP_API_LIST) {
-          try {
-            const response = await fetch(api);
-            if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
-            
-            const data = await response.json();
-            const ip = data.ip || data.ip_address;
-            if (ip) return ip;
-          } catch (error) {
-            console.log(`API ${api} 调用失败:`, error.message);
-            if (retries > 0) {
-              await new Promise(resolve => setTimeout(resolve, delay));
-              retries--;
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#007bff',
+                        secondary: '#6c757d',
+                        dark: '#343a40',
+                        light: '#f8f9fa'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
             }
-          }
         }
-        throw new Error('所有IP获取接口失败');
-      }
-      
-      window.onload = async function() {
-        let clientIP = null;
-        try {
-          clientIP = await getClientIP();
-          
-          if (!localStorage.visitorIPs) {
-            localStorage.visitorIPs = JSON.stringify({});
-          }
-          
-          const visitorIPs = JSON.parse(localStorage.visitorIPs);
-          
-          if (visitorIPs[clientIP]) {
-            visitorIPs[clientIP]++;
-          } else {
-            visitorIPs[clientIP] = 1;
-          }
-          
-          localStorage.visitorIPs = JSON.stringify(visitorIPs);
-          
-          const uniqueVisitors = Object.keys(visitorIPs).length;
-          
-          document.getElementById('viewCount').textContent = `浏览人数: ${uniqueVisitors}`;
-          document.getElementById('ipInfo').textContent = `您的IP: ${clientIP} (本IP访问次数: ${visitorIPs[clientIP]})`;
-        } catch (error) {
-          console.error('获取IP失败:', error);
-          const fallbackKey = 'fallbackVisitorId';
-          
-          if (!localStorage[fallbackKey]) {
-            localStorage[fallbackKey] = 'fallback_' + Math.random().toString(36).substr(2, 9);
-          }
-          
-          if (!localStorage.fallbackViewCount) {
-            localStorage.fallbackViewCount = JSON.stringify({});
-          }
-          
-          const fallbackCounts = JSON.parse(localStorage.fallbackViewCount);
-          const visitorId = localStorage[fallbackKey];
-          
-          if (fallbackCounts[visitorId]) {
-            fallbackCounts[visitorId]++;
-          } else {
-            fallbackCounts[visitorId] = 1;
-          }
-          
-          localStorage.fallbackViewCount = JSON.stringify(fallbackCounts);
-          const uniqueVisitors = Object.keys(fallbackCounts).length;
-          
-          document.getElementById('viewCount').textContent = `浏览人数: ${uniqueVisitors}`;
-          document.getElementById('ipInfo').textContent = "IP检测服务暂时不可用，已启用设备标识模式";
-        }
-      };
     </script>
-  </head>
-  <body>
-    <h1>White Client!</h1>
-    <p>功能性客户端，由jjjmmmdexh制作</p>
-    <p>Made In China</p>
-    <div id="viewCount" style="margin: 20px 0; font-style: italic;"></div>
-    <div id="ipInfo" style="margin: 10px 0; color: #666; font-size: 0.9em;"></div>
-    
-    <a href="https://github.com/jjjmmmdexh227/jjjmmmdexh/raw/main/Client.apk" 
-       style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">
-      下载White Client
-    </a>
-  </body>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .device-card {
+                @apply bg-white rounded-xl shadow-md p-6 transition-all duration-300 hover:shadow-lg;
+            }
+            .btn-primary {
+                @apply bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50;
+            }
+            .section-padding {
+                @apply py-8 md:py-12;
+            }
+        }
+    </style>
+    <script>
+        // 生成设备唯一标识 (浏览器指纹)
+        function generateDeviceFingerprint() {
+            // 收集浏览器和设备信息作为指纹
+            const fingerPrintSources = [
+                navigator.userAgent,
+                navigator.language,
+                navigator.platform,
+                screen.width + 'x' + screen.height,
+                screen.colorDepth,
+                typeof localStorage,
+                typeof sessionStorage,
+                navigator.hardwareConcurrency,
+                navigator.deviceMemory
+            ];
+            
+            // 简单哈希函数生成唯一标识
+            function simpleHash(str) {
+                let hash = 0;
+                for (let i = 0; i < str.length; i++) {
+                    const char = str.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash; // 转换为32位整数
+                }
+                return Math.abs(hash).toString(16);
+            }
+            
+            return simpleHash(fingerPrintSources.join('|'));
+        }
+
+        // IP获取API列表
+        const IP_API_LIST = [
+            'https://api.ipify.org?format=json',
+            'https://ipapi.co/json/',
+            'https://ipinfo.io/json'
+        ];
+        
+        async function getClientIP(retries = 2, delay = 1000) {
+            for (const api of IP_API_LIST) {
+                try {
+                    const response = await fetch(api);
+                    if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+                    
+                    const data = await response.json();
+                    const ip = data.ip || data.ip_address;
+                    if (ip) return ip;
+                } catch (error) {
+                    console.log(`API ${api} 调用失败:`, error.message);
+                    if (retries > 0) {
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        retries--;
+                    }
+                }
+            }
+            throw new Error('所有IP获取接口失败');
+        }
+        
+        // 检查是否为重复访问（防刷检测）
+        function checkDuplicateVisit(deviceId, ip) {
+            const visitsKey = 'validVisits';
+            let visits = JSON.parse(localStorage.getItem(visitsKey) || '[]');
+            
+            // 检查过去24小时内是否有相同设备或IP的访问
+            const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+            const recentVisits = visits.filter(visit => visit.timestamp > oneDayAgo);
+            
+            // 检查设备ID或IP是否已存在
+            const isDuplicate = recentVisits.some(visit => 
+                visit.deviceId === deviceId || (ip && visit.ip === ip)
+            );
+            
+            // 记录新访问（如果不是重复的）
+            if (!isDuplicate) {
+                visits.push({
+                    deviceId,
+                    ip,
+                    timestamp: Date.now()
+                });
+                localStorage.setItem(visitsKey, JSON.stringify(visits));
+            }
+            
+            return isDuplicate;
+        }
+        
+        // 获取唯一访客数量
+        function getUniqueVisitorsCount() {
+            const visitsKey = 'validVisits';
+            const visits = JSON.parse(localStorage.getItem(visitsKey) || '[]');
+            const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+            
+            // 过滤出24小时内的有效访问
+            const recentVisits = visits.filter(visit => visit.timestamp > oneDayAgo);
+            
+            // 使用Set收集唯一设备ID
+            const uniqueDevices = new Set();
+            recentVisits.forEach(visit => uniqueDevices.add(visit.deviceId));
+            
+            return uniqueDevices.size;
+        }
+        
+        // 获取当前设备的访问次数
+        function getDeviceVisitCount(deviceId) {
+            const visitsKey = 'validVisits';
+            const visits = JSON.parse(localStorage.getItem(visitsKey) || '[]');
+            return visits.filter(visit => visit.deviceId === deviceId).length;
+        }
+        
+        window.onload = async function() {
+            // 生成设备唯一标识
+            const deviceId = generateDeviceFingerprint();
+            let clientIP = null;
+            let isDuplicate = false;
+            
+            try {
+                // 获取IP地址
+                clientIP = await getClientIP();
+                
+                // 检查是否为重复访问
+                isDuplicate = checkDuplicateVisit(deviceId, clientIP);
+                
+                // 更新显示信息
+                const uniqueVisitors = getUniqueVisitorsCount();
+                const deviceVisits = getDeviceVisitCount(deviceId);
+                
+                document.getElementById('viewCount').textContent = `今日浏览人数: ${uniqueVisitors}`;
+                document.getElementById('ipInfo').textContent = `您的IP: ${clientIP}`;
+                document.getElementById('deviceId').textContent = `设备标识: ${deviceId.substring(0, 12)}...`;
+                document.getElementById('visitCount').textContent = `本设备今日访问: ${deviceVisits} 次`;
+                
+                // 显示防刷检测结果
+                const antiSpamResult = document.getElementById('antiSpamResult');
+                if (isDuplicate) {
+                    antiSpamResult.innerHTML = '<i class="fa fa-exclamation-triangle text-yellow-500"></i> 检测到重复访问，本次不计入统计';
+                    antiSpamResult.className = 'text-yellow-500 font-medium mt-2';
+                } else {
+                    antiSpamResult.innerHTML = '<i class="fa fa-check-circle text-green-500"></i> 验证通过，正常访问';
+                    antiSpamResult.className = 'text-green-500 font-medium mt-2';
+                }
+                
+            } catch (error) {
+                console.error('获取IP失败:', error);
+                
+                // IP获取失败时，仅使用设备ID进行防刷检测
+                isDuplicate = checkDuplicateVisit(deviceId, null);
+                
+                const uniqueVisitors = getUniqueVisitorsCount();
+                const deviceVisits = getDeviceVisitCount(deviceId);
+                
+                document.getElementById('viewCount').textContent = `今日浏览人数: ${uniqueVisitors}`;
+                document.getElementById('ipInfo').textContent = "IP检测服务暂时不可用";
+                document.getElementById('deviceId').textContent = `设备标识: ${deviceId.substring(0, 12)}...`;
+                document.getElementById('visitCount').textContent = `本设备今日访问: ${deviceVisits} 次`;
+                
+                // 显示防刷检测结果
+                const antiSpamResult = document.getElementById('antiSpamResult');
+                if (isDuplicate) {
+                    antiSpamResult.innerHTML = '<i class="fa fa-exclamation-triangle text-yellow-500"></i> 检测到重复访问，本次不计入统计';
+                    antiSpamResult.className = 'text-yellow-500 font-medium mt-2';
+                } else {
+                    antiSpamResult.innerHTML = '<i class="fa fa-check-circle text-green-500"></i> 验证通过，正常访问';
+                    antiSpamResult.className = 'text-green-500 font-medium mt-2';
+                }
+            }
+        };
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+    <div class="container mx-auto px-4 max-w-3xl">
+        <!-- 头部区域 -->
+        <header class="text-center section-padding">
+            <img src="title.png" alt="White Client" width="1538" height="472" class="mx-auto"/>
+            <p class="text-secondary text-lg mb-2">功能性客户端</p>
+            <p class="text-secondary">由jjjmmmdexh制作 · Made In China</p>
+        </header>
+        
+        <!-- 设备信息与防刷区域 -->
+        <section class="section-padding">
+            <div class="device-card">
+                <h2 class="text-xl font-semibold text-dark mb-4 flex items-center">
+                    <i class="fa fa-shield text-primary mr-2"></i>设备验证与统计
+                </h2>
+                
+                <div class="space-y-3 text-gray-700">
+                    <p id="viewCount" class="p-2 bg-gray-50 rounded-lg"></p>
+                    <p id="ipInfo" class="p-2 bg-gray-50 rounded-lg"></p>
+                    <p id="deviceId" class="p-2 bg-gray-50 rounded-lg text-sm"></p>
+                    <p id="visitCount" class="p-2 bg-gray-50 rounded-lg"></p>
+                    <div id="antiSpamResult"></div>
+                </div>
+                
+                <div class="mt-4 text-sm text-gray-500">
+                    <p><i class="fa fa-info-circle mr-1"></i> 系统采用IP+设备双重验证</p>
+                    <p><i class="fa fa-clock-o mr-1"></i> 每日统计数据按24小时周期更新</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 下载区域 -->
+        <section class="section-padding text-center">
+            <a href="https://github.com/jjjmmmdexh227/jjjmmmdexh/raw/main/Minecraft%20-%20white_3.3正式版.apk" 
+               class="btn-primary inline-flex items-center">
+                <i class="fa fa-download mr-2"></i> 下载White Client <span class="text-sm text-gray-400">(版本: 3.4)</span>
+            </a>
+            
+            <div class="mt-6 text-gray-600 text-sm">
+                <p>jjjmmmdexh制作</p>
+            </div>
+        </section>
+        
+        <!-- 底部区域 -->
+        <footer class="py-6 text-center text-gray-500 text-sm">
+            <p>© 2025- White Client. jjjmmmdexh个人保留所有权利。</p>
+        </footer>
+    </div>
+</body>
 </html>
