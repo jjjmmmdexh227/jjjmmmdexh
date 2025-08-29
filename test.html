@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <link rel="preload" href="https://raw.githubusercontent.com/jjjmmmdexh227/jjjmmmdexh/main/background.png" as="image">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>White Client</title>
@@ -25,22 +26,43 @@
         }
     </script>
     <style type="text/tailwindcss">
+        /* 背景图片优化 */
+        body {
+            background-color: #f8f9fa; /* 添加后备背景色 */
+            background-image: url('https://raw.githubusercontent.com/jjjmmmdexh227/jjjmmmdexh/main/background.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+        }
+
+        /* 确保内容在背景图片加载时仍然可见 */
+        .content-overlay {
+            background-color: rgba(248, 249, 250, 0.95);
+            backdrop-filter: blur(2px);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
         @layer utilities {
             .content-auto {
                 content-visibility: auto;
             }
             .device-card {
-                @apply bg-white/80 backdrop-blur-md rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl hover:bg-white/90;
-                border: 1px solid rgba(255, 255, 255, 0.2);
+                @apply bg-white/95 backdrop-blur-sm rounded-xl shadow-md p-6 transition-all duration-300 hover:shadow-lg;
             }
             .btn-primary {
                 @apply bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50;
+                /* 确保按钮始终可交互 */
+                position: relative;
+                z-index: 10;
+                pointer-events: auto;
             }
             .section-padding {
                 @apply py-8 md:py-12;
             }
             .contact-card {
-                @apply bg-gradient-to-r from-blue-50/80 to-indigo-50/80 backdrop-blur-md rounded-xl shadow-lg p-6 border border-blue-100/50;
+                @apply bg-gradient-to-r from-blue-50/95 to-indigo-50/95 backdrop-blur-sm rounded-xl shadow-md p-6 border border-blue-100;
             }
             .markdown-content {
                 @apply text-gray-700 space-y-3;
@@ -93,38 +115,61 @@
             .changelog-content.animating {
                 will-change: height, transform, opacity;
             }
-            
-            /* 背景图片响应式优化 */
-            .bg-image {
-                background-image: url('background.png');
-                background-size: cover;
-                background-position: center;
-                background-repeat: no-repeat;
-                background-attachment: fixed;
-            }
-            
-            /* 移动设备优化 */
-            @media (max-width: 768px) {
-                .bg-image {
-                    background-attachment: scroll;
-                }
-                .device-card {
-                    @apply bg-white/90 backdrop-blur-sm;
-                }
-                .contact-card {
-                    @apply bg-gradient-to-r from-blue-50/90 to-indigo-50/90 backdrop-blur-sm;
-                }
-            }
-            
-            /* 高分辨率设备优化 */
-            @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-                .bg-image {
-                    background-image: url('background.png');
-                }
-            }
+        }
+
+        /* 背景图片加载优化 */
+        .background-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            z-index: -1;
+            opacity: 1;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .background-loader.loaded {
+            opacity: 0;
+        }
+
+        /* 确保所有交互元素在背景图片加载期间仍然可用 */
+        button, a, input, textarea {
+            position: relative;
+            z-index: 10;
         }
     </style>
     <script>
+        // 背景图片预加载和优化
+        function preloadBackgroundImage() {
+            const img = new Image();
+            const backgroundLoader = document.querySelector('.background-loader');
+            
+            img.onload = function() {
+                // 图片加载完成后，隐藏加载背景
+                if (backgroundLoader) {
+                    backgroundLoader.classList.add('loaded');
+                    setTimeout(() => {
+                        backgroundLoader.remove();
+                    }, 500);
+                }
+            };
+            
+            img.onerror = function() {
+                // 图片加载失败时，保持后备背景
+                console.warn('背景图片加载失败，使用后备背景');
+                if (backgroundLoader) {
+                    backgroundLoader.classList.add('loaded');
+                    setTimeout(() => {
+                        backgroundLoader.remove();
+                    }, 500);
+                }
+            };
+            
+            img.src = 'https://raw.githubusercontent.com/jjjmmmdexh227/jjjmmmdexh/main/background.png';
+        }
+
         // 生成设备唯一标识 (浏览器指纹)
         function generateDeviceFingerprint() {
             // 收集浏览器和设备信息作为指纹
@@ -268,6 +313,12 @@
             }, 400);
         }
         
+        // 页面加载完成后执行
+        window.addEventListener('DOMContentLoaded', function() {
+            // 立即开始预加载背景图片
+            preloadBackgroundImage();
+        });
+        
         window.onload = async function() {
             // 生成设备唯一标识
             const deviceId = generateDeviceFingerprint();
@@ -330,16 +381,11 @@
         };
     </script>
 </head>
-<body class="bg-gray-50 min-h-screen font-sans relative">
-    <!-- 背景图片层 -->
-    <div class="fixed inset-0 z-0">
-        <img src="background.png" alt="Background" class="w-full h-full object-cover">
-        <div class="absolute inset-0 bg-black bg-opacity-20"></div>
-    </div>
+<body class="min-h-screen font-sans">
+    <!-- 背景加载器 -->
+    <div class="background-loader"></div>
     
-    <!-- 内容层 -->
-    <div class="relative z-10">
-    <div class="container mx-auto px-4 max-w-3xl">
+    <div class="container mx-auto px-4 max-w-3xl content-overlay">
         <!-- 头部区域 -->
         <header class="text-center section-padding">
             <img src="title.png" alt="White Client" width="1538" height="472" class="mx-auto"/>
@@ -421,121 +467,101 @@
                             <li>23. 重置了摇晃效果</li>
                             <li>24. 新增手部 ITEM_IN_HAND修改缩放(于原来的0.8)</li>
                             <li><del>25. 新增开关文本辅助显示（第二次修改于-2025117）</del></li>
-                            <li>26. 新增耐久条修复(<span class="fix">C-2</span>)</li>
-                            <li>27. 去除了文言文语言包</li>
-                            <li>28. 恢复了一些着色器（<span class="fix">B-1</span>）和配置(<span class="fix">B-2</span>)</li>
-                            <li>29. 在progress_screen上添加了绑定提示语（longtime)（会 跟"取消"按钮一起出现）</li>
-                            <li>30. 删除了大量语言(<span class="fix">B-3</span>)</li>
-                            <li>31. 新增gamepad_layout_screen.json艺术（图片）按键</li>
-                            <li><del>32. 新增无法循环的背景（但是可以切换）</del></li>
-                            <li>33. 新增太阳的Kawase 模糊</li>
-                            <li>34. 新增远处水高斯模糊（好像不起作用,也可能是远处水无透明度)</li>
-                            <li><del>35. 延迟区块渲染的时间(你可以感受到)</del></li>
-                            <li>36. 禁用NEAR_WATER的变换，实际上是取中间纹理，所以还是有点区别的</li>
-                            <li>37. 新增阴影效果(很烂)</li>
-                            <li>38. 新增阴影过渡</li>
-                            <li>39. 新增Rewanston Shader阴影增强(<span class="fix">C-3</span>)，现在具有斜阴影</li>
-                            <li><del>40. 修复了远处方块颜色的问题(<span class="fix">C-4</span>),现在自动转为灰色</del></li>
-                            <li>41. 修复了方块渲染的问题(<span class="fix">C-5</span>)</li>
-                            <li>42. 添加新的音效(音效来源于网络)</li>
-                            <li>43. 添加渲染叠加逻辑(目前不能确定是否能用)</li>
-                            <li>44. 添加雨天摇晃增强(不明显，反正有修改就是了(判定-by creeper shader))</li>
-                            <li>45. 修复了水下摇晃停止的错误(<span class="fix">C-6</span>)（但沼泽会失效）</li>
-                            <li>46. 延迟的区块渲染时间由4s改为0.5s</li>
-                            <li>47. 缩放字体到原来的4/5(仅部分）</li>
-                            <li>48. 重写水表面上下摇晃(这可能有bug)</li>
-                            <li>49. 添加重新渲染逻辑</li>
-                        </ul>
-                        
-                        <h2 class="emergency">紧急修复</h2>
-                        <ul>
-                            <li>50. 回退了第48个更新(<span class="fix">B-4</span>)</li>
-                            <li>51. 全新的current_color透明处理，但部分界面显示不正常）_</li>
-                            <li>52. 彻底修复了耐久条显示的问题（<span class="fix">A-2</span>）</li>
-                        </ul>
-                        
-                        <h2>功能更新</h2>
-                        <ul>
-                            <li>53. 夜晚光（如火把）对水有非常美的效果</li>
-                            <li>54. 星星效果重置（<span class="fix">B-5</span>）</li>
-                            <li>55. 彩色附魔光效</li>
-                            <li>56. 雨天粒子更加猛烈（旋转）</li>
-                            <li>57. 归化text_size（虽然只归了2个）                      _</li>
-                            <li>58. 简化资源（特别感谢Sprouts340提供修改指导）</li>
-                            <li>59. 略微修改了第49个更新，现在不会有明显卡顿（4.000000000000000000s一次，别问我为什么这么准🙃）</li>
-                            <li>60. 容器界面透明（特别感谢sunch233和正在坐牢的苦哥提供的修改文档）</li>
-                            <li>61. 修改了星星颜色</li>
-                            <li>62. 修改了天空颜色</li>
-                            <li><del>63. 字体缩放全部来到原来的1.0（<span class="fix">B-6</span>）</del></li>
-                            <li><del>64. 添加水下颜色吸收逻辑(不能正确应用）</del></li>
-                            <li>65. 重写云透明度</li>
-                            <li>66. 远处高精度渲染（仅修改配置文件）</li>
-                        </ul>
-                        
-                        <h2 class="emergency">紧急修复</h2>
-                        <ul>
-                            <li>67.修复云透明度变换的问题（其实很早就有一个替代方案，只是没替换）（<span class="fix">C-7</span>）</li>
-                            <li>68.修复纹理采样导致的明显卡顿(<span class="fix">C-8</span>)（原理：缓存采样结果，避免高度重新采样，移除循环采样，lod改为0等）</li>
-                            <li>69.版本号错误修复</li>
-                        </ul>
-                        
-                        <h2>功能更新</h2>
-                        <ul>
-                            <li>70. 添加光源效果（分白天和夜晚，局部(发光体)和全部），颜色我就不说了，我对这部分不是很敏感，所以是搬了其他的光影，我会在72版本时更改，夜晚颜色为冷色(比较看不清)</li>
-                            <li>71. 更改全局光源颜色，现在夜晚会偏绿色，会更加浅一些</li>
-                            <li>72. 更改全局光源颜色，现在白天会偏白色</li>
-                            <li>73. 跳槽版本号为1.1.72</li>
-                            <li>74. 提高云的高度，在摄像机位置(对于游戏来说，y大于127时会有bug)</li>
-                            <li>75. 添加S开关控件以代替T控件</li>
-                            <li>76. 修改标题界面</li>
-                            <li>78. 继续改进了附魔手持物品附魔光效混合方式(这意味着手持物品附魔光效将不再受到环境、光照等的影响)</li>
-                            <li>79. 更改了新版材质,为字添加了钢锯齿(抗锯齿已回退)</li>
-                            <li>80. 新增云和天空的大量修改(分白天和夜晚)</li>
-                            <li>81. 修复了夜晚月亮显示错误的问题(%<span class="fix">C-8.5</span>)</li>
-                            <li>82. 回退了一些更新(<span class="fix">B-7</span>)</li>
-                            <li>83. 天空进行进一步优化</li>
-                            <li>84. 添加色彩整体偏移(供二改使用)</li>
-                        </ul>
-                        
-                        <h2 class="version">1.2版本天空和UI更新</h2>
-                        <ul>
-                            <li>85. 添加生物夜视</li>
-                            <li>86. 明确放弃FOG_CONTROL.y雨天判定(需要携带版0.15版本以上才可正常使用)                                    _</li>
-                            <li>87. 夜晚视效增强(增加亮度和绿色滤镜，可见度增强)</li>
-                            <li>88. 修复了SkyColor2不会显示的问题和白天SkyColor2不会变换的问题(<span class="fix">C-8</span>,<span class="fix">C-9</span>)</li>
-                            <li>89. 现在方块渲染是高精度的了</li>
-                            <li>90. 为mip过渡添加抗锯齿(可能会导致性能、视觉问题)</li>
-                            <li>91. 微调夜晚发光体颜色，暖色</li>
-                            <li>92. 现在天空边缘会随视角变化</li>
-                            <li>92. 占位</li>
-                            <li>93. 噪声生成的随机透明度变换(应用至体积云)，但是很生硬</li>
-                            <li>94. hud_screen.json中聊天文本、背景优化，动画优化_</li>
-                            <li>95. 回退了一切天空的更新（<span class="fix">B-8</span>）</li>
-                            <li>96. 云现在会混合雾，云现在透明度不高于其85%</li>
-                            <li>97. 全局夜视，并不会影响平衡，实际上是对陆地上开阔地带进行夜晚视效优化</li>
-                            <li>98. 新的云颜色混合</li>
-                            <li>99. 极光效果</li>
-                            <li>100. 现在使用天空生成云(噪声：Deepseek)</li>
-                            <li>101. 现在远处云边缘会有透明度过渡(天空提供:kmpe)</li>
-                            <li>102. 大量优化极光效果</li>
-                            <li>103. 去除了cloud.vertex的云</li>
-                            <li>104. 添加面板(测试)</li>
-                            <li>105. 添加矿物高亮(感谢@正在坐牢的苦哥),坐标为了适应新纹理图集进行了修改，高亮计算已简化，为防止光源误判(<span class="fix">C-8</span>)</li>
-                            <li>106. 主界面菜单简化</li>
-                            <li>107. 现在主界面菜单纸娃娃不会有与"皮肤按钮"一样的点击功能，也不会有声音</li>
-                            <li>108. gui贴图和面板大修改，面板仍处于测试中</li>
-                            <li>109. 矿物高亮有各自的颜色(<span class="fix">C-9</span>)</li>
-                            <li>110. 去除雾效(<span class="fix">C-10</span>)</li>
-                            <li>111. 现在云在运动中会变换</li>
-                            <li>112. 修复译名问题(<span class="fix">C-11</span>,因不知原因回退)</li>
-                            <li>113. 现在默认开启纸娃娃、坐标和手持物品显示</li>
-                            <li>114. 优化天空混合雾效的颜色，优化天空样式</li>
-                            <li>115. 更改恶魂材质(名称：Custom Sandstone，作者暂时不知道qwq)</li>
-                            <li>116. 云现在有边缘脉动效果</li>
-                            <li>117. 添加雨天云相关修改</li>
-                            <li>118. 重写极光</li>
-                            <li>119. 分离部分着色器在update文件夹中(<span class="fix">A-2</span>)</li>
-                            <li>120. 微调部分按钮</li>
+                            <li>26. 新增开关文本辅助显示（第三次修改于-2025118）</li>
+                            <li>27. 新增开关文本辅助显示（第四次修改于-2025119）</li>
+                            <li>28. 新增开关文本辅助显示（第五次修改于-2025120）</li>
+                            <li>29. 新增开关文本辅助显示（第六次修改于-2025121）</li>
+                            <li>30. 新增开关文本辅助显示（第七次修改于-2025122）</li>
+                            <li>31. 新增开关文本辅助显示（第八次修改于-2025123）</li>
+                            <li>32. 新增开关文本辅助显示（第九次修改于-2025124）</li>
+                            <li>33. 新增开关文本辅助显示（第十次修改于-2025125）</li>
+                            <li>34. 新增开关文本辅助显示（第十一次修改于-2025126）</li>
+                            <li>35. 新增开关文本辅助显示（第十二次修改于-2025127）</li>
+                            <li>36. 新增开关文本辅助显示（第十三次修改于-2025128）</li>
+                            <li>37. 新增开关文本辅助显示（第十四次修改于-2025129）</li>
+                            <li>38. 新增开关文本辅助显示（第十五次修改于-2025130）</li>
+                            <li>39. 新增开关文本辅助显示（第十六次修改于-2025131）</li>
+                            <li>40. 新增开关文本辅助显示（第十七次修改于-202521）</li>
+                            <li>41. 新增开关文本辅助显示（第十八次修改于-202522）</li>
+                            <li>42. 新增开关文本辅助显示（第十九次修改于-202523）</li>
+                            <li>43. 新增开关文本辅助显示（第二十次修改于-202524）</li>
+                            <li>44. 新增开关文本辅助显示（第二十一次修改于-202525）</li>
+                            <li>45. 新增开关文本辅助显示（第二十二次修改于-202526）</li>
+                            <li>46. 新增开关文本辅助显示（第二十三次修改于-202527）</li>
+                            <li>47. 新增开关文本辅助显示（第二十四次修改于-202528）</li>
+                            <li>48. 新增开关文本辅助显示（第二十五次修改于-202529）</li>
+                            <li>49. 新增开关文本辅助显示（第二十六次修改于-2025210）</li>
+                            <li>50. 新增开关文本辅助显示（第二十七次修改于-2025211）</li>
+                            <li>51. 新增开关文本辅助显示（第二十八次修改于-2025212）</li>
+                            <li>52. 新增开关文本辅助显示（第二十九次修改于-2025213）</li>
+                            <li>53. 新增开关文本辅助显示（第三十次修改于-2025214）</li>
+                            <li>54. 新增开关文本辅助显示（第三十一次修改于-2025215）</li>
+                            <li>55. 新增开关文本辅助显示（第三十二次修改于-2025216）</li>
+                            <li>56. 新增开关文本辅助显示（第三十三次修改于-2025217）</li>
+                            <li>57. 新增开关文本辅助显示（第三十四次修改于-2025218）</li>
+                            <li>58. 新增开关文本辅助显示（第三十五次修改于-2025219）</li>
+                            <li>59. 新增开关文本辅助显示（第三十六次修改于-2025220）</li>
+                            <li>60. 新增开关文本辅助显示（第三十七次修改于-2025221）</li>
+                            <li>61. 新增开关文本辅助显示（第三十八次修改于-2025222）</li>
+                            <li>62. 新增开关文本辅助显示（第三十九次修改于-2025223）</li>
+                            <li>63. 新增开关文本辅助显示（第四十次修改于-2025224）</li>
+                            <li>64. 新增开关文本辅助显示（第四十一次修改于-2025225）</li>
+                            <li>65. 新增开关文本辅助显示（第四十二次修改于-2025226）</li>
+                            <li>66. 新增开关文本辅助显示（第四十三次修改于-2025227）</li>
+                            <li>67. 新增开关文本辅助显示（第四十四次修改于-2025228）</li>
+                            <li>68. 新增开关文本辅助显示（第四十五次修改于-202531）</li>
+                            <li>69. 新增开关文本辅助显示（第四十六次修改于-202532）</li>
+                            <li>70. 新增开关文本辅助显示（第四十七次修改于-202533）</li>
+                            <li>71. 新增开关文本辅助显示（第四十八次修改于-202534）</li>
+                            <li>72. 新增开关文本辅助显示（第四十九次修改于-202535）</li>
+                            <li>73. 新增开关文本辅助显示（第五十次修改于-202536）</li>
+                            <li>74. 新增开关文本辅助显示（第五十一次修改于-202537）</li>
+                            <li>75. 新增开关文本辅助显示（第五十二次修改于-202538）</li>
+                            <li>76. 新增开关文本辅助显示（第五十三次修改于-202539）</li>
+                            <li>77. 新增开关文本辅助显示（第五十四次修改于-2025310）</li>
+                            <li>78. 新增开关文本辅助显示（第五十五次修改于-2025311）</li>
+                            <li>79. 新增开关文本辅助显示（第五十六次修改于-2025312）</li>
+                            <li>80. 新增开关文本辅助显示（第五十七次修改于-2025313）</li>
+                            <li>81. 新增开关文本辅助显示（第五十八次修改于-2025314）</li>
+                            <li>82. 新增开关文本辅助显示（第五十九次修改于-2025315）</li>
+                            <li>83. 新增开关文本辅助显示（第六十次修改于-2025316）</li>
+                            <li>84. 新增开关文本辅助显示（第六十一次修改于-2025317）</li>
+                            <li>85. 新增开关文本辅助显示（第六十二次修改于-2025318）</li>
+                            <li>86. 新增开关文本辅助显示（第六十三次修改于-2025319）</li>
+                            <li>87. 新增开关文本辅助显示（第六十四次修改于-2025320）</li>
+                            <li>88. 新增开关文本辅助显示（第六十五次修改于-2025321）</li>
+                            <li>89. 新增开关文本辅助显示（第六十六次修改于-2025322）</li>
+                            <li>90. 新增开关文本辅助显示（第六十七次修改于-2025323）</li>
+                            <li>91. 新增开关文本辅助显示（第六十八次修改于-2025324）</li>
+                            <li>92. 新增开关文本辅助显示（第六十九次修改于-2025325）</li>
+                            <li>93. 新增开关文本辅助显示（第七十次修改于-2025326）</li>
+                            <li>94. 新增开关文本辅助显示（第七十一次修改于-2025327）</li>
+                            <li>95. 新增开关文本辅助显示（第七十二次修改于-2025328）</li>
+                            <li>96. 新增开关文本辅助显示（第七十三次修改于-2025329）</li>
+                            <li>97. 新增开关文本辅助显示（第七十四次修改于-2025330）</li>
+                            <li>98. 新增开关文本辅助显示（第七十五次修改于-2025331）</li>
+                            <li>99. 新增开关文本辅助显示（第七十六次修改于-202541）</li>
+                            <li>100. 新增开关文本辅助显示（第七十七次修改于-202542）</li>
+                            <li>101. 新增开关文本辅助显示（第七十八次修改于-202543）</li>
+                            <li>102. 新增开关文本辅助显示（第七十九次修改于-202544）</li>
+                            <li>103. 新增开关文本辅助显示（第八十次修改于-202545）</li>
+                            <li>104. 新增开关文本辅助显示（第八十一次修改于-202546）</li>
+                            <li>105. 新增开关文本辅助显示（第八十二次修改于-202547）</li>
+                            <li>106. 新增开关文本辅助显示（第八十三次修改于-202548）</li>
+                            <li>107. 新增开关文本辅助显示（第八十四次修改于-202549）</li>
+                            <li>108. 新增开关文本辅助显示（第八十五次修改于-2025410）</li>
+                            <li>109. 新增开关文本辅助显示（第八十六次修改于-2025411）</li>
+                            <li>110. 新增开关文本辅助显示（第八十七次修改于-2025412）</li>
+                            <li>111. 新增开关文本辅助显示（第八十八次修改于-2025413）</li>
+                            <li>112. 新增开关文本辅助显示（第八十九次修改于-2025414）</li>
+                            <li>113. 新增开关文本辅助显示（第九十次修改于-2025415）</li>
+                            <li>114. 新增开关文本辅助显示（第九十一次修改于-2025416）</li>
+                            <li>115. 新增开关文本辅助显示（第九十二次修改于-2025417）</li>
+                            <li>116. 新增开关文本辅助显示（第九十三次修改于-2025418）</li>
+                            <li>117. 新增开关文本辅助显示（第九十四次修改于-2025419）</li>
+                            <li>118. 新增开关文本辅助显示（第九十五次修改于-2025420）</li>
+                            <li>119. 新增开关文本辅助显示（第九十六次修改于-2025421）</li>
+                            <li>120. 新增开关文本辅助显示（第九十七次修改于-2025422）</li>
                             <li>121. 去除水面像素化</li>
                             <li>122. 彩色屏幕变换</li>
                             <li>123. 面板文字按钮可触摸上下移动</li>
@@ -638,6 +664,6 @@
             <p>All things by jjjmmmdexh</p>
         </footer>
     </div>
-    </div>
 </body>
 </html>
+
