@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>White Client</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#007bff',
+                        secondary: '#6c757d',
+                        dark: '#343a40',
+                        light: '#f8f9fa',
+                        bilibili: '#00A1D6' // 添加Bilibili品牌蓝色
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .device-card {
+                @apply bg-white/80 backdrop-blur-md rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl hover:bg-white/90;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+            .btn-primary {
+                @apply bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50;
+            }
+            .section-padding {
+                @apply py-8 md:py-12;
+            }
+            .contact-card {
+                @apply bg-gradient-to-r from-blue-50/80 to-indigo-50/80 backdrop-blur-md rounded-xl shadow-lg p-6 border border-blue-100/50;
+            }
+            .markdown-content {
+                @apply text-gray-700 space-y-3;
+            }
+            .markdown-content h2 {
+                @apply text-xl font-semibold mt-4 mb-2 text-dark;
+            }
+            .markdown-content h3 {
+                @apply text-lg font-medium mt-3 mb-1 text-dark;
+            }
+            .markdown-content del {
+                @apply text-red-500;
+            }
+            .markdown-content ul {
+                @apply list-disc pl-5;
+            }
+            .markdown-content li {
+                @apply mb-1;
+            }
+            .markdown-content .version {
+                @apply bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-medium;
+            }
+            .markdown-content .fix {
+                @apply text-green-600 font-medium;
+            }
+            .markdown-content .emergency {
+                @apply text-red-600 font-semibold;
+            }
+            .markdown-content .feature {
+                @apply text-purple-600;
+            }
+            .changelog-content {
+                height: 0;
+                overflow: hidden;
+                transform-origin: top;
+                transform: scaleY(0);
+                opacity: 0;
+                transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                           transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                           opacity 0.3s ease-out;
+                will-change: height, transform, opacity;
+            }
+            .changelog-content.open {
+                transform: scaleY(1);
+                opacity: 1;
+                transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                           transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                           opacity 0.3s ease-in;
+            }
+            .changelog-content.animating {
+                will-change: height, transform, opacity;
+            }
+            
+            /* 背景图片响应式优化 */
+            .bg-image {
+                background-image: url('background.png');
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+                background-attachment: fixed;
+            }
+            
+            /* 移动设备优化 */
+            @media (max-width: 768px) {
+                .bg-image {
+                    background-attachment: scroll;
+                }
+                .device-card {
+                    @apply bg-white/90 backdrop-blur-sm;
+                }
+                .contact-card {
+                    @apply bg-gradient-to-r from-blue-50/90 to-indigo-50/90 backdrop-blur-sm;
+                }
+            }
+            
+            /* 高分辨率设备优化 */
+            @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+                .bg-image {
+                    background-image: url('background.png');
+                }
+            }
+        }
+    </style>
+    <script>
+        // 生成设备唯一标识 (浏览器指纹)
+        function generateDeviceFingerprint() {
+            // 收集浏览器和设备信息作为指纹
+            const fingerPrintSources = [
+                navigator.userAgent,
+                navigator.language,
+                navigator.platform,
+                screen.width + 'x' + screen.height,
+                screen.colorDepth,
+                typeof localStorage,
+                typeof sessionStorage,
+                navigator.hardwareConcurrency,
+                navigator.deviceMemory
+            ];
+            
+            // 简单哈希函数生成唯一标识
+            function simpleHash(str) {
+                let hash = 0;
+                for (let i = 0; i < str.length; i++) {
+                    const char = str.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash; // 转换为32位整数
+                }
+                return Math.abs(hash).toString(16);
+            }
+            
+            return simpleHash(fingerPrintSources.join('|'));
+        }
+
+        // IP获取API列表
+        const IP_API_LIST = [
+            'https://api.ipify.org?format=json',
+            'https://ipapi.co/json/',
+            'https://ipinfo.io/json'
+        ];
+        
+        async function getClientIP(retries = 2, delay = 1000) {
+            for (const api of IP_API_LIST) {
+                try {
+                    const response = await fetch(api);
+                    if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+                    
+                    const data = await response.json();
+                    const ip = data.ip || data.ip_address;
+                    if (ip) return ip;
+                } catch (error) {
+                    console.log(`API ${api} 调用失败:`, error.message);
+                    if (retries > 0) {
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        retries--;
+                    }
+                }
+            }
+            throw new Error('所有IP获取接口失败');
+        }
+        
+        // 检查是否为重复访问（防刷检测）
+        function checkDuplicateVisit(deviceId, ip) {
+            const visitsKey = 'validVisits';
+            let visits = JSON.parse(localStorage.getItem(visitsKey) || '[]');
+            
+            // 检查过去24小时内是否有相同设备或IP的访问
+            const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+            const recentVisits = visits.filter(visit => visit.timestamp > oneDayAgo);
+            
+            // 检查设备ID或IP是否已存在
+            const isDuplicate = recentVisits.some(visit => 
+                visit.deviceId === deviceId || (ip && visit.ip === ip)
+            );
+            
+            // 记录新访问（如果不是重复的）
+            if (!isDuplicate) {
+                visits.push({
+                    deviceId,
+                    ip,
+                    timestamp: Date.now()
+                });
+                localStorage.setItem(visitsKey, JSON.stringify(visits));
+            }
+            
+            return isDuplicate;
+        }
+        
+        // 获取唯一访客数量
+        function getUniqueVisitorsCount() {
+            const visitsKey = 'validVisits';
+            const visits = JSON.parse(localStorage.getItem(visitsKey) || '[]');
+            const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+            
+            // 过滤出24小时内的有效访问
+            const recentVisits = visits.filter(visit => visit.timestamp > oneDayAgo);
+            
+            // 使用Set收集唯一设备ID
+            const uniqueDevices = new Set();
+            recentVisits.forEach(visit => uniqueDevices.add(visit.deviceId));
+            
+            return uniqueDevices.size;
+        }
+        
+        // 获取当前设备的访问次数
+        function getDeviceVisitCount(deviceId) {
+            const visitsKey = 'validVisits';
+            const visits = JSON.parse(localStorage.getItem(visitsKey) || '[]');
+            return visits.filter(visit => visit.deviceId === deviceId).length;
+        }
+        
+        // 切换更新日志的展开/折叠状态
+        function toggleChangelog() {
+            const content = document.getElementById('changelogContent');
+            const button = document.getElementById('changelogToggle');
+            const icon = document.getElementById('changelogIcon');
+            
+            // 添加动画状态类
+            content.classList.add('animating');
+            
+            if (content.classList.contains('open')) {
+                // 折叠动画
+                content.style.height = content.scrollHeight + 'px';
+                // 强制重绘
+                content.offsetHeight;
+                content.style.height = '0px';
+                content.classList.remove('open');
+                
+                button.textContent = '展开更新日志';
+                icon.className = 'fa fa-chevron-down ml-2';
+            } else {
+                // 展开动画
+                content.classList.add('open');
+                content.style.height = content.scrollHeight + 'px';
+                
+                button.textContent = '收起更新日志';
+                icon.className = 'fa fa-chevron-up ml-2';
+            }
+            
+            // 动画完成后清理
+            setTimeout(() => {
+                content.classList.remove('animating');
+                if (content.classList.contains('open')) {
+                    content.style.height = 'auto';
+                }
+            }, 400);
+        }
+        
+        window.onload = async function() {
+            // 生成设备唯一标识
+            const deviceId = generateDeviceFingerprint();
+            let clientIP = null;
+            let isDuplicate = false;
+            
+            try {
+                // 获取IP地址
+                clientIP = await getClientIP();
+                
+                // 检查是否为重复访问
+                isDuplicate = checkDuplicateVisit(deviceId, clientIP);
+                
+                // 更新显示信息
+                const uniqueVisitors = getUniqueVisitorsCount();
+                const deviceVisits = getDeviceVisitCount(deviceId);
+                
+                document.getElementById('viewCount').textContent = `今日浏览人数: ${uniqueVisitors}`;
+                document.getElementById('ipInfo').textContent = `您的IP: ${clientIP}`;
+                document.getElementById('deviceId').textContent = `设备标识: ${deviceId.substring(0, 12)}...`;
+                document.getElementById('visitCount').textContent = `本设备今日访问: ${deviceVisits} 次`;
+                
+                // 显示防刷检测结果
+                const antiSpamResult = document.getElementById('antiSpamResult');
+                if (isDuplicate) {
+                    antiSpamResult.innerHTML = '<i class="fa fa-exclamation-triangle text-yellow-500"></i> 检测到重复访问，本次不计入统计';
+                    antiSpamResult.className = 'text-yellow-500 font-medium mt-2';
+                } else {
+                    antiSpamResult.innerHTML = '<i class="fa fa-check-circle text-green-500"></i> 验证通过，正常访问';
+                    antiSpamResult.className = 'text-green-500 font-medium mt-2';
+                }
+                
+            } catch (error) {
+                console.error('获取IP失败:', error);
+                
+                // IP获取失败时，仅使用设备ID进行防刷检测
+                isDuplicate = checkDuplicateVisit(deviceId, null);
+                
+                const uniqueVisitors = getUniqueVisitorsCount();
+                const deviceVisits = getDeviceVisitCount(deviceId);
+                
+                document.getElementById('viewCount').textContent = `今日浏览人数: ${uniqueVisitors}`;
+                document.getElementById('ipInfo').textContent = "IP检测服务暂时不可用";
+                document.getElementById('deviceId').textContent = `设备标识: ${deviceId.substring(0, 12)}...`;
+                document.getElementById('visitCount').textContent = `本设备今日访问: ${deviceVisits} 次`;
+                
+                // 显示防刷检测结果
+                const antiSpamResult = document.getElementById('antiSpamResult');
+                if (isDuplicate) {
+                    antiSpamResult.innerHTML = '<i class="fa fa-exclamation-triangle text-yellow-500"></i> 检测到重复访问，本次不计入统计';
+                    antiSpamResult.className = 'text-yellow-500 font-medium mt-2';
+                } else {
+                    antiSpamResult.innerHTML = '<i class="fa fa-check-circle text-green-500"></i> 验证通过，正常访问';
+                    antiSpamResult.className = 'text-green-500 font-medium mt-2';
+                }
+            }
+            
+            // 添加更新日志切换事件
+            document.getElementById('changelogToggle').addEventListener('click', toggleChangelog);
+        };
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans relative">
+    <!-- 背景图片层 -->
+    <div class="fixed inset-0 z-0">
+        <img src="background.png" alt="Background" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-black bg-opacity-20"></div>
+    </div>
+    
+    <!-- 内容层 -->
+    <div class="relative z-10">
+    <div class="container mx-auto px-4 max-w-3xl">
+        <!-- 头部区域 -->
+        <header class="text-center section-padding">
+            <img src="title.png" alt="White Client" width="1538" height="472" class="mx-auto"/>
+            <p class="text-secondary text-lg mb-2">开放*创新</p>
+            <p class="text-secondary">Client</p>
+        </header>
+        
+        <!-- 设备信息与防刷区域 -->
+        <section class="section-padding">
+            <div class="device-card">
+                <h2 class="text-xl font-semibold text-dark mb-4 flex items-center">
+                    <i class="fa fa-shield text-primary mr-2"></i>设备验证与统计
+                </h2>
+                
+                <div class="space-y-3 text-gray-700">
+                    <p id="viewCount" class="p-2 bg-gray-50 rounded-lg"></p>
+                    <p id="ipInfo" class="p-2 bg-gray-50 rounded-lg"></p>
+                    <p id="deviceId" class="p-2 bg-gray-50 rounded-lg text-sm"></p>
+                    <p id="visitCount" class="p-2 bg-gray-50 rounded-lg"></p>
+                    <div id="antiSpamResult"></div>
+                </div>
+                
+                <div class="mt-4 text-sm text-gray-500">
+                    <p><i class="fa fa-info-circle mr-1"></i> 验证</p>
+                    <p><i class="fa fa-clock-o mr-1"></i> 每日统计数据按24小时周期更新</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 下载区域 -->
+        <section class="section-padding text-center">
+            <a href="https://github.com/jjjmmmdexh227/jjjmmmdexh/raw/main/Client3.4.apk" 
+               class="btn-primary inline-flex items-center">
+                <i class="fa fa-download mr-2"></i> 下载White Client <span class="text-sm text-gray-400">(版本: 3.4)</span>
+            </a>
+            
+            <div class="mt-6 text-gray-600 text-sm">
+                <p>jjjmmmdexh制作</p>
+            </div>
+        </section>
+        
+        <!-- 更新日志区域 -->
+        <section class="section-padding">
+            <div class="device-card">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-dark flex items-center">
+                        <i class="fa fa-history text-primary mr-2"></i>更新日志
+                    </h2>
+                    <button id="changelogToggle" class="text-primary hover:text-primary/80 font-medium flex items-center">
+                        展开更新日志 <i id="changelogIcon" class="fa fa-chevron-down ml-2"></i>
+                    </button>
+                </div>
+                
+                <div id="changelogContent" class="changelog-content mt-4">
+                    <div class="markdown-content">
+                        <h2>主要更改</h2>
+                        <ul>
+                            <li><del>1. 文字颜色变换</del></li>
+                            <li>2. 新版方块材质</li>
+                            <li>3. jjjmmmdexh的jsonui v4.1</li>
+                            <li><del>4. 更好的渐变水(去除黑白色更明显)</del></li>
+                            <li>5. 更好的天空</li>
+                            <li>6. 更容易看清的实体(亮度较高)</li>
+                            <li>7. 更少的材质更改</li>
+                            <li>9. 去粒子🌰</li>
+                            <li>10. 更好的云☁️</li>
+                            <li><del>11. 添加临近的基层雾🌫️</del></li>
+                            <li>12. 现在生物会更容易被发现</li>
+                            <li>13. 新的 start_screen                        _</li>
+                            <li>14. 重新优化了植物摇晃效果，虽然很保守</li>
+                            <li><del>15.  文言文语言(by xigua&Sprouts) </del></li>
+                            <li>16. 修复了附魔台的崩溃(原因：贴图丢失，<span class="fix">A-1</span>)</li>
+                            <li><del>17. 恢复了current color(<span class="fix">B-0</span>)</del></li>
+                            <li>18. 重写了摇晃效果，具有随机性(<span class="fix">C-1</span>)</li>
+                            <li><del>19. 雷现在可被透视</del></li>
+                            <li>20. 完全去除了粒子</li>
+                            <li>21. 更好的云☁️</li>
+                            <li><del>22. 新的加载动画</del></li>
+                            <li>23. 重置了摇晃效果</li>
+                            <li>24. 新增手部 ITEM_IN_HAND修改缩放(于原来的0.8)</li>
+                            <li><del>25. 新增开关文本辅助显示（第二次修改于-2025117）</del></li>
+                            <li>26. 新增耐久条修复(<span class="fix">C-2</span>)</li>
+                            <li>27. 去除了文言文语言包</li>
+                            <li>28. 恢复了一些着色器（<span class="fix">B-1</span>）和配置(<span class="fix">B-2</span>)</li>
+                            <li>29. 在progress_screen上添加了绑定提示语（longtime)（会 跟"取消"按钮一起出现）</li>
+                            <li>30. 删除了大量语言(<span class="fix">B-3</span>)</li>
+                            <li>31. 新增gamepad_layout_screen.json艺术（图片）按键</li>
+                            <li><del>32. 新增无法循环的背景（但是可以切换）</del></li>
+                            <li>33. 新增太阳的Kawase 模糊</li>
+                            <li>34. 新增远处水高斯模糊（好像不起作用,也可能是远处水无透明度)</li>
+                            <li><del>35. 延迟区块渲染的时间(你可以感受到)</del></li>
+                            <li>36. 禁用NEAR_WATER的变换，实际上是取中间纹理，所以还是有点区别的</li>
+                            <li>37. 新增阴影效果(很烂)</li>
+                            <li>38. 新增阴影过渡</li>
+                            <li>39. 新增Rewanston Shader阴影增强(<span class="fix">C-3</span>)，现在具有斜阴影</li>
+                            <li><del>40. 修复了远处方块颜色的问题(<span class="fix">C-4</span>),现在自动转为灰色</del></li>
+                            <li>41. 修复了方块渲染的问题(<span class="fix">C-5</span>)</li>
+                            <li>42. 添加新的音效(音效来源于网络)</li>
+                            <li>43. 添加渲染叠加逻辑(目前不能确定是否能用)</li>
+                            <li>44. 添加雨天摇晃增强(不明显，反正有修改就是了(判定-by creeper shader))</li>
+                            <li>45. 修复了水下摇晃停止的错误(<span class="fix">C-6</span>)（但沼泽会失效）</li>
+                            <li>46. 延迟的区块渲染时间由4s改为0.5s</li>
+                            <li>47. 缩放字体到原来的4/5(仅部分）</li>
+                            <li>48. 重写水表面上下摇晃(这可能有bug)</li>
+                            <li>49. 添加重新渲染逻辑</li>
+                        </ul>
+                        
+                        <h2 class="emergency">紧急修复</h2>
+                        <ul>
+                            <li>50. 回退了第48个更新(<span class="fix">B-4</span>)</li>
+                            <li>51. 全新的current_color透明处理，但部分界面显示不正常）_</li>
+                            <li>52. 彻底修复了耐久条显示的问题（<span class="fix">A-2</span>）</li>
+                        </ul>
+                        
+                        <h2>功能更新</h2>
+                        <ul>
+                            <li>53. 夜晚光（如火把）对水有非常美的效果</li>
+                            <li>54. 星星效果重置（<span class="fix">B-5</span>）</li>
+                            <li>55. 彩色附魔光效</li>
+                            <li>56. 雨天粒子更加猛烈（旋转）</li>
+                            <li>57. 归化text_size（虽然只归了2个）                      _</li>
+                            <li>58. 简化资源（特别感谢Sprouts340提供修改指导）</li>
+                            <li>59. 略微修改了第49个更新，现在不会有明显卡顿（4.000000000000000000s一次，别问我为什么这么准🙃）</li>
+                            <li>60. 容器界面透明（特别感谢sunch233和正在坐牢的苦哥提供的修改文档）</li>
+                            <li>61. 修改了星星颜色</li>
+                            <li>62. 修改了天空颜色</li>
+                            <li><del>63. 字体缩放全部来到原来的1.0（<span class="fix">B-6</span>）</del></li>
+                            <li><del>64. 添加水下颜色吸收逻辑(不能正确应用）</del></li>
+                            <li>65. 重写云透明度</li>
+                            <li>66. 远处高精度渲染（仅修改配置文件）</li>
+                        </ul>
+                        
+                        <h2 class="emergency">紧急修复</h2>
+                        <ul>
+                            <li>67.修复云透明度变换的问题（其实很早就有一个替代方案，只是没替换）（<span class="fix">C-7</span>）</li>
+                            <li>68.修复纹理采样导致的明显卡顿(<span class="fix">C-8</span>)（原理：缓存采样结果，避免高度重新采样，移除循环采样，lod改为0等）</li>
+                            <li>69.版本号错误修复</li>
+                        </ul>
+                        
+                        <h2>功能更新</h2>
+                        <ul>
+                            <li>70. 添加光源效果（分白天和夜晚，局部(发光体)和全部），颜色我就不说了，我对这部分不是很敏感，所以是搬了其他的光影，我会在72版本时更改，夜晚颜色为冷色(比较看不清)</li>
+                            <li>71. 更改全局光源颜色，现在夜晚会偏绿色，会更加浅一些</li>
+                            <li>72. 更改全局光源颜色，现在白天会偏白色</li>
+                            <li>73. 跳槽版本号为1.1.72</li>
+                            <li>74. 提高云的高度，在摄像机位置(对于游戏来说，y大于127时会有bug)</li>
+                            <li>75. 添加S开关控件以代替T控件</li>
+                            <li>76. 修改标题界面</li>
+                            <li>78. 继续改进了附魔手持物品附魔光效混合方式(这意味着手持物品附魔光效将不再受到环境、光照等的影响)</li>
+                            <li>79. 更改了新版材质,为字添加了钢锯齿(抗锯齿已回退)</li>
+                            <li>80. 新增云和天空的大量修改(分白天和夜晚)</li>
+                            <li>81. 修复了夜晚月亮显示错误的问题(%<span class="fix">C-8.5</span>)</li>
+                            <li>82. 回退了一些更新(<span class="fix">B-7</span>)</li>
+                            <li>83. 天空进行进一步优化</li>
+                            <li>84. 添加色彩整体偏移(供二改使用)</li>
+                        </ul>
+                        
+                        <h2 class="version">1.2版本天空和UI更新</h2>
+                        <ul>
+                            <li>85. 添加生物夜视</li>
+                            <li>86. 明确放弃FOG_CONTROL.y雨天判定(需要携带版0.15版本以上才可正常使用)                                    _</li>
+                            <li>87. 夜晚视效增强(增加亮度和绿色滤镜，可见度增强)</li>
+                            <li>88. 修复了SkyColor2不会显示的问题和白天SkyColor2不会变换的问题(<span class="fix">C-8</span>,<span class="fix">C-9</span>)</li>
+                            <li>89. 现在方块渲染是高精度的了</li>
+                            <li>90. 为mip过渡添加抗锯齿(可能会导致性能、视觉问题)</li>
+                            <li>91. 微调夜晚发光体颜色，暖色</li>
+                            <li>92. 现在天空边缘会随视角变化</li>
+                            <li>92. 占位</li>
+                            <li>93. 噪声生成的随机透明度变换(应用至体积云)，但是很生硬</li>
+                            <li>94. hud_screen.json中聊天文本、背景优化，动画优化_</li>
+                            <li>95. 回退了一切天空的更新（<span class="fix">B-8</span>）</li>
+                            <li>96. 云现在会混合雾，云现在透明度不高于其85%</li>
+                            <li>97. 全局夜视，并不会影响平衡，实际上是对陆地上开阔地带进行夜晚视效优化</li>
+                            <li>98. 新的云颜色混合</li>
+                            <li>99. 极光效果</li>
+                            <li>100. 现在使用天空生成云(噪声：Deepseek)</li>
+                            <li>101. 现在远处云边缘会有透明度过渡(天空提供:kmpe)</li>
+                            <li>102. 大量优化极光效果</li>
+                            <li>103. 去除了cloud.vertex的云</li>
+                            <li>104. 添加面板(测试)</li>
+                            <li>105. 添加矿物高亮(感谢@正在坐牢的苦哥),坐标为了适应新纹理图集进行了修改，高亮计算已简化，为防止光源误判(<span class="fix">C-8</span>)</li>
+                            <li>106. 主界面菜单简化</li>
+                            <li>107. 现在主界面菜单纸娃娃不会有与"皮肤按钮"一样的点击功能，也不会有声音</li>
+                            <li>108. gui贴图和面板大修改，面板仍处于测试中</li>
+                            <li>109. 矿物高亮有各自的颜色(<span class="fix">C-9</span>)</li>
+                            <li>110. 去除雾效(<span class="fix">C-10</span>)</li>
+                            <li>111. 现在云在运动中会变换</li>
+                            <li>112. 修复译名问题(<span class="fix">C-11</span>,因不知原因回退)</li>
+                            <li>113. 现在默认开启纸娃娃、坐标和手持物品显示</li>
+                            <li>114. 优化天空混合雾效的颜色，优化天空样式</li>
+                            <li>115. 更改恶魂材质(名称：Custom Sandstone，作者暂时不知道qwq)</li>
+                            <li>116. 云现在有边缘脉动效果</li>
+                            <li>117. 添加雨天云相关修改</li>
+                            <li>118. 重写极光</li>
+                            <li>119. 分离部分着色器在update文件夹中(<span class="fix">A-2</span>)</li>
+                            <li>120. 微调部分按钮</li>
+                            <li>121. 去除水面像素化</li>
+                            <li>122. 彩色屏幕变换</li>
+                            <li>123. 面板文字按钮可触摸上下移动</li>
+                            <li>124. 背包中的物品现在是高精度＋抗锯齿的了</li>
+                            <li>125. 强制使用东亚字体宽度（瘦体），使用了高清的字体</li>
+                            <li>126. 对高清字体有部分小修复，其实就是增加宽度（不能完全解决问题）</li>
+                            <li>127. 修复了选择繁体、日本语时崩溃的问题（<span class="fix">A-3</span>）</li>
+                            <li>128. 恢复了更多语言（<span class="fix">B-9</span>）</li>
+                            <li>129. 太阳2°/s旋转</li>
+                        </ul>
+                        
+                        <h2 class="version">1.3版本数据库与面板更新</h2>
+                        <ul>
+                            <li>130. 去除在床上睡觉时的遮罩(方法名_ZN24FullScreenEffectRenderer19_renderSleepOverlayERK6Player,使用nop代替 bl &lt;_ZNK3mce4Mesh6renderERKNS_11MaterialPtrEjj&gt; ;#0x2d84bc)</li>
+                            <li>131. 在聊天界面时玩家受伤不会返回（方法名：_ZNK10ChatScreen17closeOnPlayerHurtEv中movs r0, #1改为movs r0, #0）</li>
+                            <li>132. 修复了伤害吸收生命值显示在生命条的下方的问题（hex编辑器：偏移：0x3113e8，改为：cdccbcbd）(<span class="fix">A-4</span>)</li>
+                            <li>133. 创造模式显示生命值（方法_ZN16HudHeartRenderer6renderER15MinecraftClientRSt10shared_ptrI9UIControlEi中bl &lt;_ZNK6Player10IsCreativeEv&gt; ;#0x513e7c下面第3行改为nop.w）</li>
+                            <li>134. 真＊夜视</li>
+                            <li>135. [最重要的更新]为游戏实现计时器的功能</li>
+                            <li>136. 可能修复了一切字体问题（？）</li>
+                            <li>137. 去除了部分语言</li>
+                            <li>138. 强制疾跑，仅单人</li>
+                            <li>139. 自定义准星beta</li>
+                            <li>140.gui盔甲问题修复</li>
+                            <li>141.新音效</li>
+                            <li>142.受伤无抖动（_ZN13LevelRenderer7bobHurtER6Matrixf其中 _ ble &lt;@this+20&gt; ;#4629364 改 b &lt;@this+20&gt; ;#4629364 或者 hex修改 0x46a398 002bebdd改002bebe7</li>
+                            <li>143. 水下透视（需要先进入水下再出来）</li>
+                            <li>144. 新的主界面</li>
+                            <li>145. 9x9自定义准星界面</li>
+                            <li>146. 物品名称辅助显示</li>
+                            <li>147. 物品名称向左对齐（_ZN6Screen26renderOnSelectItemNameTextEiP4Fonti，两个sub.w r2, r6, fp, asr #1都改为mov r2, r6）_</li>
+                            <li>148. 新开始屏幕</li>
+                            <li>149. 现在cancel_toggle可以正确使用</li>
+                            <li>150. 为show添加第2页，并添加第一页和第二页的图标</li>
+                            <li>151. 禁用使用物品时的减速效果，服务器可用，目前危险性未知，未被制裁</li>
+                            <li>152. 修复面板中的自定义准星预览在其它面板页面可见的问题，详见hud_screen.json中fix注释</li>
+                            <li>153. 音乐测试（在面板中）</li>
+                            <li>154. 修复了辅助瞄准准星与快捷准星冲突的问题(<span class="fix">C-12</span>)[Tips:如何关闭辅助准星呢？最好的方法就是在快捷准星栏选择你喜欢的准星即可]</li>
+                            <li>155. 高级隐藏</li>
+                            <li>156. 修复部分译名问题(<span class="fix">C-13</span>)</li>
+                            <li>157. 修复着色器适配性问题(<span class="fix">C-14</span>)</li>
+                            <li>158. 添加hud界面欢迎提示</li>
+                            <li>159. 开关实体透视</li>
+                            <li>160. 使用极其高清的字体</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 联系区域 -->
+        <section class="section-padding">
+            <div class="contact-card">
+                <h2 class="text-xl font-semibold text-dark mb-4 flex items-center">
+                    <i class="fa fa-envelope text-primary mr-2"></i>关于
+                </h2>
+                
+                <div class="space-y-4 text-gray-700">
+                    <div class="flex items-center p-3 bg-white rounded-lg shadow-sm">
+                        <div class="bg-blue-100 p-2 rounded-full mr-3">
+                            <i class="fa fa-qq text-blue-600"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium">QQ</p>
+                            <p class="text-sm text-gray-500">1591123827</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center p-3 bg-white rounded-lg shadow-sm">
+                        <div class="bg-blue-100 p-2 rounded-full mr-3">
+                            <i class="fa fa-envelope text-blue-600"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium">E-MAIL</p>
+                            <a href="mailto:name1591123827@163.com" class="text-sm text-primary hover:underline">name1591123827@163.com</a>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center p-3 bg-white rounded-lg shadow-sm">
+                        <div class="bg-blue-100 p-2 rounded-full mr-3 flex items-center justify-center">
+                            <!-- Bilibili 小电视 SVG图标 -->
+                            <svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M17.813 4.653h.854c1.51.054 2.769.578 3.773 1.574 1.004.995 1.524 2.249 1.56 3.76v7.36c-.036 1.51-.556 2.769-1.56 3.773s-2.262 1.524-3.773 1.56H5.333c-1.51-.036-2.769-.556-3.773-1.56S.036 18.858 0 17.347v-7.36c.036-1.51.556-2.765 1.56-3.76 1.004-.996 2.262-1.52 3.773-1.574h.774l-1.174-1.12a1.234 1.234 0 0 1-.373-.906c0-.356.124-.658.373-.907l.027-.027c.267-.249.573-.373.92-.373.347 0 .653.124.92.373L9.653 4.44c.071.071.134.142.187.213h4.267a.836.836 0 0 1 .16-.213l2.853-2.747c.267-.249.573-.373.92-.373.347 0 .662.151.929.4.267.249.391.551.391.907 0 .356-.124.657-.373.906l-1.174 1.12zM5.333 7.24c-.746.018-1.373.276-1.88.773-.506.498-.769 1.13-.789 1.894v7.52c.02.765.283 1.395.789 1.893.507.498 1.134.756 1.88.773h13.334c.746-.017 1.373-.275 1.88-.773.506-.498.769-1.128.789-1.893v-7.52c-.02-.765-.283-1.396-.789-1.894-.507-.497-1.134-.755-1.88-.773H5.333zM8 11.107c.373 0 .684.124.933.373.25.249.383.569.4.96v1.173c-.017.391-.15.711-.4.96-.249.25-.56.374-.933.374s-.684-.125-.933-.374c-.25-.249-.383-.569-.4-.96V12.44c.017-.391.15-.711.4-.96.249-.249.56-.373.933-.373zm8 0c.373 0 .684.124.933.373.25.249.383.569.4.96v1.173c-.017.391-.15.711-.4.96-.249.25-.56.374-.933.374s-.684-.125-.933-.374c-.25-.249-.383-.569-.4-.96V12.44c.017-.391.15-.711.4-.96.249-.249.56-.373.933-.373z" fill="#00A1D6"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="font-medium">bilibili</p>
+                            <a href="https://space.bilibili.com/3546584027499085" target="_blank" class="text-sm text-primary hover:underline">jjjmmmdexh</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 text-sm text-gray-500">
+                </div>
+            </div>
+        </section>
+        
+        <!-- 底部区域 -->
+        <footer class="py-6 text-center text-gray-500 text-sm">
+            <p>All things by jjjmmmdexh</p>
+        </footer>
+    </div>
+    </div>
+</body>
+</html>
