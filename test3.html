@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windows 命令查询器</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <header class="header">
+            <h1><i class="fas fa-terminal"></i> Windows 命令查询器</h1>
+            <p class="subtitle">快速查找和复制 Windows CMD 和 PowerShell 命令</p>
+        </header>
+
+        <!-- 搜索区域 -->
+        <div class="search-section">
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="searchInput" placeholder="搜索命令..." class="search-input">
+                <button id="clearSearch" class="clear-btn" title="清除搜索">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 命令分类导航 -->
+        <div class="nav-section">
+            <div class="nav-buttons">
+                <button id="cmdBtn" class="nav-btn active" data-type="cmd">
+                    <i class="fas fa-terminal"></i>
+                    CMD
+                </button>
+                <button id="powershellBtn" class="nav-btn" data-type="powershell">
+                    <i class="fab fa-microsoft"></i>
+                    PowerShell
+                </button>
+            </div>
+        </div>
+
+        <!-- 命令列表区域 -->
+        <div class="commands-section">
+            <div id="commandsList" class="commands-list">
+                <!-- 命令项将通过JavaScript动态生成 -->
+            </div>
+            <div id="noResults" class="no-results" style="display: none;">
+                <i class="fas fa-search"></i>
+                <p>未找到匹配的命令</p>
+            </div>
+        </div>
+
+        <!-- 使用方法说明区域 -->
+        <div class="help-section">
+            <div class="help-header" id="helpToggle">
+                <h3><i class="fas fa-question-circle"></i> 使用方法</h3>
+                <i class="fas fa-chevron-down toggle-icon"></i>
+            </div>
+            <div class="help-content" id="helpContent">
+                <div class="help-item">
+                    <h4><i class="fas fa-search"></i> 搜索命令</h4>
+                    <p>在搜索框中输入关键词，系统会实时过滤显示相关命令。</p>
+                </div>
+                <div class="help-item">
+                    <h4><i class="fas fa-copy"></i> 复制命令</h4>
+                    <p>点击命令右侧的复制按钮，命令将自动复制到剪贴板。</p>
+                </div>
+                <div class="help-item">
+                    <h4><i class="fas fa-exchange-alt"></i> 切换类型</h4>
+                    <p>使用顶部的 CMD 和 PowerShell 按钮切换不同类型的命令。</p>
+                </div>
+                <div class="help-item">
+                    <h4><i class="fas fa-lightbulb"></i> 使用提示</h4>
+                    <p>大部分命令支持 <code>命令名 /?</code> 或 <code>Get-Help 命令名</code> 查看详细帮助。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部 -->
+        <footer class="footer">
+            <p>&copy; 2024 Windows 命令查询器 | 提高您的命令行效率</p>
+        </footer>
+    </div>
+
+    <!-- 复制成功提示 -->
+    <div id="copyToast" class="copy-toast">
+        <i class="fas fa-check"></i>
+        <span>命令已复制到剪贴板</span>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
