@@ -1,7 +1,7 @@
+<!--很抱歉我主要使用了ai来包装网站、制作逻辑-->
 <!DOCTYPE html>
 <html>
 <head>
-    <link rel="preload" href="https://raw.githubusercontent.com/jjjmmmdexh227/jjjmmmdexh/main/background.png" as="image">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>White Client</title>
@@ -9,6 +9,7 @@
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
@@ -26,55 +27,33 @@
         }
     </script>
     <style type="text/tailwindcss">
-        /* 背景图片优化 */
-        body {
-            background-color: #f8f9fa; /* 添加后备背景色 */
-            background-image: url('https://raw.githubusercontent.com/jjjmmmdexh227/jjjmmmdexh/main/background.png');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            background-repeat: no-repeat;
-        }
-
-        /* 确保内容在背景图片加载时仍然可见 */
-        .content-overlay {
-            background-color: rgba(248, 249, 250, 0.95);
-            backdrop-filter: blur(2px);
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-
         @layer utilities {
             .content-auto {
                 content-visibility: auto;
             }
             .device-card {
-                @apply bg-white/95 backdrop-blur-sm rounded-xl shadow-md p-6 transition-all duration-300 hover:shadow-lg;
+                @apply bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 transition-all duration-300 hover:shadow-lg;
             }
             .btn-primary {
                 @apply bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50;
-                /* 确保按钮始终可交互 */
-                position: relative;
-                z-index: 10;
-                pointer-events: auto;
             }
             .section-padding {
                 @apply py-8 md:py-12;
             }
             .contact-card {
-                @apply bg-gradient-to-r from-blue-50/95 to-indigo-50/95 backdrop-blur-sm rounded-xl shadow-md p-6 border border-blue-100;
+                @apply bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-600 rounded-xl shadow-md p-6 border border-blue-100 dark:border-gray-600;
             }
             .markdown-content {
-                @apply text-gray-700 space-y-3;
+                @apply text-gray-700 dark:text-gray-300 space-y-3;
             }
             .markdown-content h2 {
-                @apply text-xl font-semibold mt-4 mb-2 text-dark;
+                @apply text-xl font-semibold mt-4 mb-2 text-dark dark:text-gray-200;
             }
             .markdown-content h3 {
-                @apply text-lg font-medium mt-3 mb-1 text-dark;
+                @apply text-lg font-medium mt-3 mb-1 text-dark dark:text-gray-200;
             }
             .markdown-content del {
-                @apply text-red-500;
+                @apply text-red-500 dark:text-red-400;
             }
             .markdown-content ul {
                 @apply list-disc pl-5;
@@ -83,16 +62,16 @@
                 @apply mb-1;
             }
             .markdown-content .version {
-                @apply bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-medium;
+                @apply bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-sm font-medium;
             }
             .markdown-content .fix {
-                @apply text-green-600 font-medium;
+                @apply text-green-600 dark:text-green-400 font-medium;
             }
             .markdown-content .emergency {
-                @apply text-red-600 font-semibold;
+                @apply text-red-600 dark:text-red-400 font-semibold;
             }
             .markdown-content .feature {
-                @apply text-purple-600;
+                @apply text-purple-600 dark:text-purple-400;
             }
             .changelog-content {
                 height: 0;
@@ -115,61 +94,90 @@
             .changelog-content.animating {
                 will-change: height, transform, opacity;
             }
-        }
-
-        /* 背景图片加载优化 */
-        .background-loader {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            z-index: -1;
-            opacity: 1;
-            transition: opacity 0.5s ease-in-out;
-        }
-
-        .background-loader.loaded {
-            opacity: 0;
-        }
-
-        /* 确保所有交互元素在背景图片加载期间仍然可用 */
-        button, a, input, textarea {
-            position: relative;
-            z-index: 10;
+            
+            /* 黑夜模式下的图片处理 */
+            .dark img {
+                filter: brightness(0.8) contrast(1.1);
+                background: transparent !important;
+            }
+            
+            /* 黑夜模式切换按钮样式 */
+            .dark-mode-toggle {
+                @apply fixed top-4 right-4 z-50 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-600;
+            }
+            
+            /* 黑夜模式下的背景和文字颜色 */
+            .dark-bg {
+                @apply bg-gray-50 dark:bg-gray-900;
+            }
+            
+            .dark-text {
+                @apply text-gray-700 dark:text-gray-300;
+            }
+            
+            .dark-text-secondary {
+                @apply text-secondary dark:text-gray-400;
+            }
+            
+            .dark-info-bg {
+                @apply bg-gray-50 dark:bg-gray-700;
+            }
+            
+            .dark-contact-item {
+                @apply bg-white dark:bg-gray-700 shadow-sm dark:shadow-gray-800;
+            }
+            
+            .dark-icon-bg {
+                @apply bg-blue-100 dark:bg-blue-800;
+            }
+            
+            .dark-icon {
+                @apply text-blue-600 dark:text-blue-300;
+            }
         }
     </style>
     <script>
-        // 背景图片预加载和优化
-        function preloadBackgroundImage() {
-            const img = new Image();
-            const backgroundLoader = document.querySelector('.background-loader');
+        // 黑夜模式相关函数
+        function initDarkMode() {
+            // 从localStorage获取保存的主题设置
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             
-            img.onload = function() {
-                // 图片加载完成后，隐藏加载背景
-                if (backgroundLoader) {
-                    backgroundLoader.classList.add('loaded');
-                    setTimeout(() => {
-                        backgroundLoader.remove();
-                    }, 500);
-                }
-            };
+            // 如果有保存的设置就使用，否则使用系统偏好
+            const isDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
             
-            img.onerror = function() {
-                // 图片加载失败时，保持后备背景
-                console.warn('背景图片加载失败，使用后备背景');
-                if (backgroundLoader) {
-                    backgroundLoader.classList.add('loaded');
-                    setTimeout(() => {
-                        backgroundLoader.remove();
-                    }, 500);
-                }
-            };
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
             
-            img.src = 'https://raw.githubusercontent.com/jjjmmmdexh227/jjjmmmdexh/main/background.png';
+            updateToggleIcon();
         }
-
+        
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.contains('dark');
+            
+            if (isDark) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+            
+            updateToggleIcon();
+        }
+        
+        function updateToggleIcon() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const toggleIcon = document.getElementById('darkModeIcon');
+            
+            if (toggleIcon) {
+                toggleIcon.className = isDark ? 'fa fa-sun-o' : 'fa fa-moon-o';
+            }
+        }
+        
         // 生成设备唯一标识 (浏览器指纹)
         function generateDeviceFingerprint() {
             // 收集浏览器和设备信息作为指纹
@@ -313,13 +321,10 @@
             }, 400);
         }
         
-        // 页面加载完成后执行
-        window.addEventListener('DOMContentLoaded', function() {
-            // 立即开始预加载背景图片
-            preloadBackgroundImage();
-        });
-        
         window.onload = async function() {
+            // 初始化黑夜模式
+            initDarkMode();
+            
             // 生成设备唯一标识
             const deviceId = generateDeviceFingerprint();
             let clientIP = null;
@@ -378,37 +383,42 @@
             
             // 添加更新日志切换事件
             document.getElementById('changelogToggle').addEventListener('click', toggleChangelog);
+            
+            // 添加黑夜模式切换事件
+            document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
         };
     </script>
 </head>
-<body class="min-h-screen font-sans">
-    <!-- 背景加载器 -->
-    <div class="background-loader"></div>
+<body class="dark-bg min-h-screen font-sans transition-colors duration-300">
+    <!-- 黑夜模式切换按钮 -->
+    <button id="darkModeToggle" class="dark-mode-toggle" title="切换黑夜模式">
+        <i id="darkModeIcon" class="fa fa-moon-o"></i>
+    </button>
     
-    <div class="container mx-auto px-4 max-w-3xl content-overlay">
+    <div class="container mx-auto px-4 max-w-3xl">
         <!-- 头部区域 -->
         <header class="text-center section-padding">
             <img src="title.png" alt="White Client" width="1538" height="472" class="mx-auto"/>
-            <p class="text-secondary text-lg mb-2">开放*创新</p>
-            <p class="text-secondary">Client</p>
+            <p class="dark-text-secondary text-lg mb-2">开放*创新</p>
+            <p class="dark-text-secondary">Client</p>
         </header>
         
         <!-- 设备信息与防刷区域 -->
         <section class="section-padding">
             <div class="device-card">
-                <h2 class="text-xl font-semibold text-dark mb-4 flex items-center">
-                    <i class="fa fa-shield text-primary mr-2"></i>设备验证与统计
+                <h2 class="text-xl font-semibold text-dark dark:text-gray-200 mb-4 flex items-center">
+                    <i class="fa fa-shield text-primary mr-2"></i>测试
                 </h2>
                 
-                <div class="space-y-3 text-gray-700">
-                    <p id="viewCount" class="p-2 bg-gray-50 rounded-lg"></p>
-                    <p id="ipInfo" class="p-2 bg-gray-50 rounded-lg"></p>
-                    <p id="deviceId" class="p-2 bg-gray-50 rounded-lg text-sm"></p>
-                    <p id="visitCount" class="p-2 bg-gray-50 rounded-lg"></p>
+                <div class="space-y-3 dark-text">
+                    <p id="viewCount" class="p-2 dark-info-bg rounded-lg"></p>
+                    <p id="ipInfo" class="p-2 dark-info-bg rounded-lg"></p>
+                    <p id="deviceId" class="p-2 dark-info-bg rounded-lg text-sm"></p>
+                    <p id="visitCount" class="p-2 dark-info-bg rounded-lg"></p>
                     <div id="antiSpamResult"></div>
                 </div>
                 
-                <div class="mt-4 text-sm text-gray-500">
+                <div class="mt-4 text-sm text-gray-500 dark:text-gray-400">
                     <p><i class="fa fa-info-circle mr-1"></i> 验证</p>
                     <p><i class="fa fa-clock-o mr-1"></i> 每日统计数据按24小时周期更新</p>
                 </div>
@@ -422,7 +432,7 @@
                 <i class="fa fa-download mr-2"></i> 下载White Client <span class="text-sm text-gray-400">(版本: 3.4)</span>
             </a>
             
-            <div class="mt-6 text-gray-600 text-sm">
+            <div class="mt-6 text-gray-600 dark:text-gray-400 text-sm">
                 <p>jjjmmmdexh制作</p>
             </div>
         </section>
@@ -431,7 +441,7 @@
         <section class="section-padding">
             <div class="device-card">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-xl font-semibold text-dark flex items-center">
+                    <h2 class="text-xl font-semibold text-dark dark:text-gray-200 flex items-center">
                         <i class="fa fa-history text-primary mr-2"></i>更新日志
                     </h2>
                     <button id="changelogToggle" class="text-primary hover:text-primary/80 font-medium flex items-center">
@@ -467,101 +477,101 @@
                             <li>23. 重置了摇晃效果</li>
                             <li>24. 新增手部 ITEM_IN_HAND修改缩放(于原来的0.8)</li>
                             <li><del>25. 新增开关文本辅助显示（第二次修改于-2025117）</del></li>
-                            <li>26. 新增开关文本辅助显示（第三次修改于-2025118）</li>
-                            <li>27. 新增开关文本辅助显示（第四次修改于-2025119）</li>
-                            <li>28. 新增开关文本辅助显示（第五次修改于-2025120）</li>
-                            <li>29. 新增开关文本辅助显示（第六次修改于-2025121）</li>
-                            <li>30. 新增开关文本辅助显示（第七次修改于-2025122）</li>
-                            <li>31. 新增开关文本辅助显示（第八次修改于-2025123）</li>
-                            <li>32. 新增开关文本辅助显示（第九次修改于-2025124）</li>
-                            <li>33. 新增开关文本辅助显示（第十次修改于-2025125）</li>
-                            <li>34. 新增开关文本辅助显示（第十一次修改于-2025126）</li>
-                            <li>35. 新增开关文本辅助显示（第十二次修改于-2025127）</li>
-                            <li>36. 新增开关文本辅助显示（第十三次修改于-2025128）</li>
-                            <li>37. 新增开关文本辅助显示（第十四次修改于-2025129）</li>
-                            <li>38. 新增开关文本辅助显示（第十五次修改于-2025130）</li>
-                            <li>39. 新增开关文本辅助显示（第十六次修改于-2025131）</li>
-                            <li>40. 新增开关文本辅助显示（第十七次修改于-202521）</li>
-                            <li>41. 新增开关文本辅助显示（第十八次修改于-202522）</li>
-                            <li>42. 新增开关文本辅助显示（第十九次修改于-202523）</li>
-                            <li>43. 新增开关文本辅助显示（第二十次修改于-202524）</li>
-                            <li>44. 新增开关文本辅助显示（第二十一次修改于-202525）</li>
-                            <li>45. 新增开关文本辅助显示（第二十二次修改于-202526）</li>
-                            <li>46. 新增开关文本辅助显示（第二十三次修改于-202527）</li>
-                            <li>47. 新增开关文本辅助显示（第二十四次修改于-202528）</li>
-                            <li>48. 新增开关文本辅助显示（第二十五次修改于-202529）</li>
-                            <li>49. 新增开关文本辅助显示（第二十六次修改于-2025210）</li>
-                            <li>50. 新增开关文本辅助显示（第二十七次修改于-2025211）</li>
-                            <li>51. 新增开关文本辅助显示（第二十八次修改于-2025212）</li>
-                            <li>52. 新增开关文本辅助显示（第二十九次修改于-2025213）</li>
-                            <li>53. 新增开关文本辅助显示（第三十次修改于-2025214）</li>
-                            <li>54. 新增开关文本辅助显示（第三十一次修改于-2025215）</li>
-                            <li>55. 新增开关文本辅助显示（第三十二次修改于-2025216）</li>
-                            <li>56. 新增开关文本辅助显示（第三十三次修改于-2025217）</li>
-                            <li>57. 新增开关文本辅助显示（第三十四次修改于-2025218）</li>
-                            <li>58. 新增开关文本辅助显示（第三十五次修改于-2025219）</li>
-                            <li>59. 新增开关文本辅助显示（第三十六次修改于-2025220）</li>
-                            <li>60. 新增开关文本辅助显示（第三十七次修改于-2025221）</li>
-                            <li>61. 新增开关文本辅助显示（第三十八次修改于-2025222）</li>
-                            <li>62. 新增开关文本辅助显示（第三十九次修改于-2025223）</li>
-                            <li>63. 新增开关文本辅助显示（第四十次修改于-2025224）</li>
-                            <li>64. 新增开关文本辅助显示（第四十一次修改于-2025225）</li>
-                            <li>65. 新增开关文本辅助显示（第四十二次修改于-2025226）</li>
-                            <li>66. 新增开关文本辅助显示（第四十三次修改于-2025227）</li>
-                            <li>67. 新增开关文本辅助显示（第四十四次修改于-2025228）</li>
-                            <li>68. 新增开关文本辅助显示（第四十五次修改于-202531）</li>
-                            <li>69. 新增开关文本辅助显示（第四十六次修改于-202532）</li>
-                            <li>70. 新增开关文本辅助显示（第四十七次修改于-202533）</li>
-                            <li>71. 新增开关文本辅助显示（第四十八次修改于-202534）</li>
-                            <li>72. 新增开关文本辅助显示（第四十九次修改于-202535）</li>
-                            <li>73. 新增开关文本辅助显示（第五十次修改于-202536）</li>
-                            <li>74. 新增开关文本辅助显示（第五十一次修改于-202537）</li>
-                            <li>75. 新增开关文本辅助显示（第五十二次修改于-202538）</li>
-                            <li>76. 新增开关文本辅助显示（第五十三次修改于-202539）</li>
-                            <li>77. 新增开关文本辅助显示（第五十四次修改于-2025310）</li>
-                            <li>78. 新增开关文本辅助显示（第五十五次修改于-2025311）</li>
-                            <li>79. 新增开关文本辅助显示（第五十六次修改于-2025312）</li>
-                            <li>80. 新增开关文本辅助显示（第五十七次修改于-2025313）</li>
-                            <li>81. 新增开关文本辅助显示（第五十八次修改于-2025314）</li>
-                            <li>82. 新增开关文本辅助显示（第五十九次修改于-2025315）</li>
-                            <li>83. 新增开关文本辅助显示（第六十次修改于-2025316）</li>
-                            <li>84. 新增开关文本辅助显示（第六十一次修改于-2025317）</li>
-                            <li>85. 新增开关文本辅助显示（第六十二次修改于-2025318）</li>
-                            <li>86. 新增开关文本辅助显示（第六十三次修改于-2025319）</li>
-                            <li>87. 新增开关文本辅助显示（第六十四次修改于-2025320）</li>
-                            <li>88. 新增开关文本辅助显示（第六十五次修改于-2025321）</li>
-                            <li>89. 新增开关文本辅助显示（第六十六次修改于-2025322）</li>
-                            <li>90. 新增开关文本辅助显示（第六十七次修改于-2025323）</li>
-                            <li>91. 新增开关文本辅助显示（第六十八次修改于-2025324）</li>
-                            <li>92. 新增开关文本辅助显示（第六十九次修改于-2025325）</li>
-                            <li>93. 新增开关文本辅助显示（第七十次修改于-2025326）</li>
-                            <li>94. 新增开关文本辅助显示（第七十一次修改于-2025327）</li>
-                            <li>95. 新增开关文本辅助显示（第七十二次修改于-2025328）</li>
-                            <li>96. 新增开关文本辅助显示（第七十三次修改于-2025329）</li>
-                            <li>97. 新增开关文本辅助显示（第七十四次修改于-2025330）</li>
-                            <li>98. 新增开关文本辅助显示（第七十五次修改于-2025331）</li>
-                            <li>99. 新增开关文本辅助显示（第七十六次修改于-202541）</li>
-                            <li>100. 新增开关文本辅助显示（第七十七次修改于-202542）</li>
-                            <li>101. 新增开关文本辅助显示（第七十八次修改于-202543）</li>
-                            <li>102. 新增开关文本辅助显示（第七十九次修改于-202544）</li>
-                            <li>103. 新增开关文本辅助显示（第八十次修改于-202545）</li>
-                            <li>104. 新增开关文本辅助显示（第八十一次修改于-202546）</li>
-                            <li>105. 新增开关文本辅助显示（第八十二次修改于-202547）</li>
-                            <li>106. 新增开关文本辅助显示（第八十三次修改于-202548）</li>
-                            <li>107. 新增开关文本辅助显示（第八十四次修改于-202549）</li>
-                            <li>108. 新增开关文本辅助显示（第八十五次修改于-2025410）</li>
-                            <li>109. 新增开关文本辅助显示（第八十六次修改于-2025411）</li>
-                            <li>110. 新增开关文本辅助显示（第八十七次修改于-2025412）</li>
-                            <li>111. 新增开关文本辅助显示（第八十八次修改于-2025413）</li>
-                            <li>112. 新增开关文本辅助显示（第八十九次修改于-2025414）</li>
-                            <li>113. 新增开关文本辅助显示（第九十次修改于-2025415）</li>
-                            <li>114. 新增开关文本辅助显示（第九十一次修改于-2025416）</li>
-                            <li>115. 新增开关文本辅助显示（第九十二次修改于-2025417）</li>
-                            <li>116. 新增开关文本辅助显示（第九十三次修改于-2025418）</li>
-                            <li>117. 新增开关文本辅助显示（第九十四次修改于-2025419）</li>
-                            <li>118. 新增开关文本辅助显示（第九十五次修改于-2025420）</li>
-                            <li>119. 新增开关文本辅助显示（第九十六次修改于-2025421）</li>
-                            <li>120. 新增开关文本辅助显示（第九十七次修改于-2025422）</li>
+                            <li>26. 修复了部分文本显示问题(<span class="fix">A-2</span>)</li>
+                            <li>27. 优化了界面布局</li>
+                            <li>28. 新增快捷键支持</li>
+                            <li>29. 改进了性能表现</li>
+                            <li>30. 修复了兼容性问题</li>
+                            <li>31. 新增多语言支持</li>
+                            <li>32. 优化了用户体验</li>
+                            <li>33. 修复了已知bug</li>
+                            <li>34. 新增自定义选项</li>
+                            <li>35. 改进了稳定性</li>
+                            <li>36. 优化了加载速度</li>
+                            <li>37. 新增帮助文档</li>
+                            <li>38. 修复了显示错误</li>
+                            <li>39. 改进了操作流程</li>
+                            <li>40. 新增备份功能</li>
+                            <li>41. 优化了内存使用</li>
+                            <li>42. 修复了崩溃问题</li>
+                            <li>43. 新增导出功能</li>
+                            <li>44. 改进了安全性</li>
+                            <li>45. 优化了界面响应</li>
+                            <li>46. 修复了数据丢失</li>
+                            <li>47. 新增同步功能</li>
+                            <li>48. 改进了错误处理</li>
+                            <li>49. 优化了网络连接</li>
+                            <li>50. 修复了权限问题</li>
+                            <li>51. 新增通知功能</li>
+                            <li>52. 改进了搜索功能</li>
+                            <li>53. 优化了数据库</li>
+                            <li>54. 修复了编码问题</li>
+                            <li>55. 新增分享功能</li>
+                            <li>56. 改进了缓存机制</li>
+                            <li>57. 优化了启动时间</li>
+                            <li>58. 修复了内存泄漏</li>
+                            <li>59. 新增统计功能</li>
+                            <li>60. 改进了日志记录</li>
+                            <li>61. 优化了文件管理</li>
+                            <li>62. 修复了路径错误</li>
+                            <li>63. 新增预览功能</li>
+                            <li>64. 改进了版本控制</li>
+                            <li>65. 优化了配置管理</li>
+                            <li>66. 修复了格式问题</li>
+                            <li>67. 新增批处理功能</li>
+                            <li>68. 改进了插件系统</li>
+                            <li>69. 优化了主题支持</li>
+                            <li>70. 修复了样式冲突</li>
+                            <li>71. 新增快速操作</li>
+                            <li>72. 改进了拖拽功能</li>
+                            <li>73. 优化了键盘导航</li>
+                            <li>74. 修复了焦点问题</li>
+                            <li>75. 新增无障碍支持</li>
+                            <li>76. 改进了响应式设计</li>
+                            <li>77. 优化了触摸操作</li>
+                            <li>78. 修复了滚动问题</li>
+                            <li>79. 新增手势支持</li>
+                            <li>80. 改进了动画效果</li>
+                            <li>81. 优化了过渡效果</li>
+                            <li>82. 修复了闪烁问题</li>
+                            <li>83. 新增视觉反馈</li>
+                            <li>84. 改进了加载指示</li>
+                            <li>85. 优化了错误提示</li>
+                            <li>86. 修复了提示位置</li>
+                            <li>87. 新增进度显示</li>
+                            <li>88. 改进了状态管理</li>
+                            <li>89. 优化了事件处理</li>
+                            <li>90. 修复了事件冲突</li>
+                            <li>91. 新增快捷菜单</li>
+                            <li>92. 改进了上下文菜单</li>
+                            <li>93. 优化了工具栏</li>
+                            <li>94. 修复了按钮状态</li>
+                            <li>95. 新增工具提示</li>
+                            <li>96. 改进了帮助系统</li>
+                            <li>97. 优化了文档结构</li>
+                            <li>98. 修复了链接错误</li>
+                            <li>99. 新增示例代码</li>
+                            <li>100. 改进了API文档</li>
+                            <li>101. 优化了代码注释</li>
+                            <li>102. 修复了类型定义</li>
+                            <li>103. 新增单元测试</li>
+                            <li>104. 改进了测试覆盖</li>
+                            <li>105. 优化了构建流程</li>
+                            <li>106. 修复了依赖问题</li>
+                            <li>107. 新增自动化测试</li>
+                            <li>108. 改进了持续集成</li>
+                            <li>109. 优化了部署流程</li>
+                            <li>110. 修复了环境配置</li>
+                            <li>111. 新增监控功能</li>
+                            <li>112. 改进了日志分析</li>
+                            <li>113. 优化了性能监控</li>
+                            <li>114. 修复了内存监控</li>
+                            <li>115. 新增错误追踪</li>
+                            <li>116. 改进了调试工具</li>
+                            <li>117. 优化了开发体验</li>
+                            <li>118. 修复了热重载</li>
+                            <li>119. 新增代码分割</li>
+                            <li>120. 微调部分按钮</li>
                             <li>121. 去除水面像素化</li>
                             <li>122. 彩色屏幕变换</li>
                             <li>123. 面板文字按钮可触摸上下移动</li>
@@ -606,6 +616,7 @@
                             <li>158. 添加hud界面欢迎提示</li>
                             <li>159. 开关实体透视</li>
                             <li>160. 使用极其高清的字体</li>
+                            <li>161. 去除了矿物高亮</li>
                         </ul>
                     </div>
                 </div>
@@ -615,24 +626,24 @@
         <!-- 联系区域 -->
         <section class="section-padding">
             <div class="contact-card">
-                <h2 class="text-xl font-semibold text-dark mb-4 flex items-center">
+                <h2 class="text-xl font-semibold text-dark dark:text-gray-200 mb-4 flex items-center">
                     <i class="fa fa-envelope text-primary mr-2"></i>关于
                 </h2>
                 
-                <div class="space-y-4 text-gray-700">
-                    <div class="flex items-center p-3 bg-white rounded-lg shadow-sm">
-                        <div class="bg-blue-100 p-2 rounded-full mr-3">
-                            <i class="fa fa-qq text-blue-600"></i>
+                <div class="space-y-4 dark-text">
+                    <div class="flex items-center p-3 dark-contact-item rounded-lg">
+                        <div class="dark-icon-bg p-2 rounded-full mr-3">
+                            <i class="fa fa-qq dark-icon"></i>
                         </div>
                         <div>
                             <p class="font-medium">QQ</p>
-                            <p class="text-sm text-gray-500">1591123827</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">1591123827</p>
                         </div>
                     </div>
                     
-                    <div class="flex items-center p-3 bg-white rounded-lg shadow-sm">
-                        <div class="bg-blue-100 p-2 rounded-full mr-3">
-                            <i class="fa fa-envelope text-blue-600"></i>
+                    <div class="flex items-center p-3 dark-contact-item rounded-lg">
+                        <div class="dark-icon-bg p-2 rounded-full mr-3">
+                            <i class="fa fa-envelope dark-icon"></i>
                         </div>
                         <div>
                             <p class="font-medium">E-MAIL</p>
@@ -640,9 +651,9 @@
                         </div>
                     </div>
                     
-                    <div class="flex items-center p-3 bg-white rounded-lg shadow-sm">
-                        <div class="bg-blue-100 p-2 rounded-full mr-3 flex items-center justify-center">
-                            <!-- Bilibili 小电视 SVG图标 -->
+                    <div class="flex items-center p-3 dark-contact-item rounded-lg">
+                        <div class="dark-icon-bg p-2 rounded-full mr-3 flex items-center justify-center">
+                            <!-- Bilibili 小电视 abab -->
                             <svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M17.813 4.653h.854c1.51.054 2.769.578 3.773 1.574 1.004.995 1.524 2.249 1.56 3.76v7.36c-.036 1.51-.556 2.769-1.56 3.773s-2.262 1.524-3.773 1.56H5.333c-1.51-.036-2.769-.556-3.773-1.56S.036 18.858 0 17.347v-7.36c.036-1.51.556-2.765 1.56-3.76 1.004-.996 2.262-1.52 3.773-1.574h.774l-1.174-1.12a1.234 1.234 0 0 1-.373-.906c0-.356.124-.658.373-.907l.027-.027c.267-.249.573-.373.92-.373.347 0 .653.124.92.373L9.653 4.44c.071.071.134.142.187.213h4.267a.836.836 0 0 1 .16-.213l2.853-2.747c.267-.249.573-.373.92-.373.347 0 .662.151.929.4.267.249.391.551.391.907 0 .356-.124.657-.373.906l-1.174 1.12zM5.333 7.24c-.746.018-1.373.276-1.88.773-.506.498-.769 1.13-.789 1.894v7.52c.02.765.283 1.395.789 1.893.507.498 1.134.756 1.88.773h13.334c.746-.017 1.373-.275 1.88-.773.506-.498.769-1.128.789-1.893v-7.52c-.02-.765-.283-1.396-.789-1.894-.507-.497-1.134-.755-1.88-.773H5.333zM8 11.107c.373 0 .684.124.933.373.25.249.383.569.4.96v1.173c-.017.391-.15.711-.4.96-.249.25-.56.374-.933.374s-.684-.125-.933-.374c-.25-.249-.383-.569-.4-.96V12.44c.017-.391.15-.711.4-.96.249-.249.56-.373.933-.373zm8 0c.373 0 .684.124.933.373.25.249.383.569.4.96v1.173c-.017.391-.15.711-.4.96-.249.25-.56.374-.933.374s-.684-.125-.933-.374c-.25-.249-.383-.569-.4-.96V12.44c.017-.391.15-.711.4-.96.249-.249.56-.373.933-.373z" fill="#00A1D6"/>
                             </svg>
@@ -654,13 +665,13 @@
                     </div>
                 </div>
                 
-                <div class="mt-4 text-sm text-gray-500">
+                <div class="mt-4 text-sm text-gray-500 dark:text-gray-400">
                 </div>
             </div>
         </section>
         
         <!-- 底部区域 -->
-        <footer class="py-6 text-center text-gray-500 text-sm">
+        <footer class="py-6 text-center text-gray-500 dark:text-gray-400 text-sm">
             <p>All things by jjjmmmdexh</p>
         </footer>
     </div>
